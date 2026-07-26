@@ -1,0 +1,25 @@
+{
+  "name": "local-lg-tv-remote",
+  "version": "1.0.0",
+  "description": "A local-only LG webOS TV scanner, pairing bridge, and remote control website.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:bg": "node scripts/server-manager.js start",
+    "start:phone": "node scripts/server-manager.js start --host=0.0.0.0",
+    "stop": "node scripts/server-manager.js stop",
+    "status": "node scripts/server-manager.js status"
+  },
+  "keywords": [
+    "lg",
+    "webos",
+    "tv",
+    "remote",
+    "local"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

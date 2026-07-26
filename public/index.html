@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#E6E9EE">
+    <title>Local LG Remote</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="stage" id="app">
+
+      <div class="remote" role="group" aria-label="LG webOS remote">
+
+        <div class="remote-glare" aria-hidden="true"></div>
+        <div class="remote-edge" aria-hidden="true"></div>
+
+        <!-- IR LED + brand -->
+        <div class="remote-top">
+          <span class="ir-led" aria-hidden="true"></span>
+          <span class="brand">LG webOS</span>
+        </div>
+
+        <!-- Tiny status pill -->
+        <div class="remote-status">
+          <div class="status-pill" id="statusPill">
+            <span class="status-dot"></span>
+            <span id="statusText">Offline</span>
+          </div>
+          <h2 class="tv-name" id="tvName">No TV</h2>
+          <p class="tv-meta" id="tvMeta">Tap menu to scan</p>
+        </div>
+
+        <!-- Top icon row -->
+        <div class="row row-icons">
+          <button class="ic-btn ic-danger" id="powerButton" data-command="powerOff" type="button" aria-label="Power">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
+          </button>
+          <button class="ic-btn" id="homeButton" data-command="buttonHome" type="button" aria-label="Home">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg>
+          </button>
+          <button class="ic-btn" id="menuButton" type="button" aria-label="Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+          </button>
+        </div>
+
+        <!-- D-Pad with flanking rockers -->
+        <div class="dpad-cluster">
+          <div class="rocker rocker--vol">
+            <button class="rocker-btn" data-command="volumeUp" type="button" aria-label="Volume up">+</button>
+            <div class="rocker-mid"><span>VOL</span></div>
+            <button class="rocker-btn" data-command="volumeDown" type="button" aria-label="Volume down">−</button>
+          </div>
+
+          <div class="dpad" aria-label="Directional pad">
+            <button class="dpad-zone dpad-up" data-command="buttonUp" type="button" aria-label="Up"></button>
+            <button class="dpad-zone dpad-left" data-command="buttonLeft" type="button" aria-label="Left"></button>
+            <button class="dpad-ok" data-command="buttonEnter" type="button" aria-label="OK">OK</button>
+            <button class="dpad-zone dpad-right" data-command="buttonRight" type="button" aria-label="Right"></button>
+            <button class="dpad-zone dpad-down" data-command="buttonDown" type="button" aria-label="Down"></button>
+            <span class="dpad-dot dpad-dot-up"></span>
+            <span class="dpad-dot dpad-dot-left"></span>
+            <span class="dpad-dot dpad-dot-right"></span>
+            <span class="dpad-dot dpad-dot-down"></span>
+          </div>
+
+          <div class="rocker rocker--ch">
+            <button class="rocker-btn" data-command="channelUp" type="button" aria-label="Channel up">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>
+            </button>
+            <div class="rocker-mid"><span>CH</span></div>
+            <button class="rocker-btn" data-command="channelDown" type="button" aria-label="Channel down">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Color keys -->
+        <div class="row row-colors">
+          <button class="color-dot color-red" data-command="red" type="button" aria-label="Red"></button>
+          <button class="color-dot color-green" data-command="green" type="button" aria-label="Green"></button>
+          <button class="color-dot color-yellow" data-command="yellow" type="button" aria-label="Yellow"></button>
+          <button class="color-dot color-blue" data-command="blue" type="button" aria-label="Blue"></button>
+        </div>
+
+        <!-- Number pad -->
+        <div class="numpad" aria-label="Number pad">
+          <button class="numpad-btn" data-digit="1" type="button">1</button>
+          <button class="numpad-btn" data-digit="2" type="button">2<span class="numpad-sub">ABC</span></button>
+          <button class="numpad-btn" data-digit="3" type="button">3<span class="numpad-sub">DEF</span></button>
+          <button class="numpad-btn" data-digit="4" type="button">4<span class="numpad-sub">GHI</span></button>
+          <button class="numpad-btn" data-digit="5" type="button">5<span class="numpad-sub">JKL</span></button>
+          <button class="numpad-btn" data-digit="6" type="button">6<span class="numpad-sub">MNO</span></button>
+          <button class="numpad-btn" data-digit="7" type="button">7<span class="numpad-sub">PQRS</span></button>
+          <button class="numpad-btn" data-digit="8" type="button">8<span class="numpad-sub">TUV</span></button>
+          <button class="numpad-btn" data-digit="9" type="button">9<span class="numpad-sub">WXYZ</span></button>
+          <button class="numpad-btn numpad-list" data-command="buttonList" type="button" aria-label="Recent list">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h16"/></svg>
+          </button>
+          <button class="numpad-btn" data-digit="0" type="button">0<span class="numpad-sub">+</span></button>
+          <button class="numpad-btn numpad-back" id="numpadBack" type="button" aria-label="Backspace">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v0a5 5 0 0 1-5 5h-4"/></svg>
+          </button>
+        </div>
+
+        <!-- Bottom nav -->
+        <div class="row row-bottom">
+          <button class="bar-btn" data-command="buttonBack" type="button" aria-label="Back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v0a5 5 0 0 1-5 5h-4"/></svg>
+          </button>
+          <button class="bar-btn" data-command="input" type="button" aria-label="Input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="m10 14 5 3-5 3z" fill="currentColor"/></svg>
+          </button>
+          <button class="hero-btn" id="heroButton" type="button" aria-label="Apps">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+          </button>
+          <button class="bar-btn" data-command="buttonExit" type="button" aria-label="Exit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5v16h14V8h-4"/><path d="M9 4v4h4"/></svg>
+          </button>
+          <button class="bar-btn" id="openAppsButton" type="button" aria-label="Menu" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+          </button>
+        </div>
+
+        <!-- Battery cap -->
+        <div class="remote-bottom" aria-hidden="true">
+          <span class="battery-cap"></span>
+        </div>
+      </div>
+
+      <!-- DRAWER -->
+      <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+      <aside class="drawer" id="drawer" aria-hidden="true">
+        <div class="drawer-handle" aria-hidden="true"></div>
+        <nav class="drawer-tabs" role="tablist">
+          <button class="drawer-tab is-active" data-drawer-tab="connect" type="button" role="tab">Connect</button>
+          <button class="drawer-tab" data-drawer-tab="settings" type="button" role="tab">Settings</button>
+        </nav>
+        <section class="drawer-panel" data-drawer-panel="connect" role="tabpanel">
+          <p class="eyebrow">Network</p>
+          <h2>Find your TV</h2>
+          <p class="muted">Scan the local network or enter an IP address.</p>
+          <button class="primary-btn" id="scanButton" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3"/></svg>
+            <span>Scan network</span>
+          </button>
+          <div class="field">
+            <label for="manualHost">Manual IP</label>
+            <div class="field-row">
+              <input id="manualHost" type="text" inputmode="decimal" placeholder="192.168.1.42" autocomplete="off">
+              <button class="ghost-btn" id="manualConnect" type="button">Connect</button>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <p class="eyebrow">Discovered</p>
+          <div id="deviceList" class="device-list"></div>
+          <p class="muted" id="scanHint">Press scan with your TV turned on.</p>
+        </section>
+        <section class="drawer-panel" data-drawer-panel="settings" role="tabpanel" hidden>
+          <p class="eyebrow">Appearance</p>
+          <h2>Theme</h2>
+          <div class="seg" id="themeSeg" role="radiogroup" aria-label="Theme">
+            <button class="seg-btn is-active" data-theme-opt="light" type="button" role="radio" aria-checked="true">Light</button>
+            <button class="seg-btn" data-theme-opt="dark" type="button" role="radio" aria-checked="false">Dark</button>
+          </div>
+          <div class="divider"></div>
+          <p class="eyebrow">Connection</p>
+          <h2>Pairing</h2>
+          <p class="muted" id="serverInfo">Loading server info…</p>
+          <button class="ghost-btn ghost-btn--block" id="clearKeyButton" type="button">Forget saved TV key</button>
+        </section>
+      </aside>
+
+      <!-- APPS VIEW -->
+      <section class="apps-view" id="appsView" aria-hidden="true">
+        <header class="apps-header">
+          <button class="ic-btn" id="closeAppsButton" type="button" aria-label="Back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+          </button>
+          <div class="apps-title">
+            <p class="eyebrow">Apps</p>
+            <h2>Launch an app</h2>
+          </div>
+          <button class="ic-btn" id="refreshAppsButton" type="button" aria-label="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+          </button>
+        </header>
+        <div class="apps-grid" id="appsGrid"></div>
+        <p class="muted apps-empty" id="appsEmpty" hidden>No apps loaded yet.</p>
+      </section>
+
+      <div class="pairing-overlay hidden" id="pairingOverlay" role="dialog" aria-live="polite">
+        <div class="pairing-card">
+          <div class="loader"></div>
+          <h2>Pairing with your LG TV</h2>
+          <p class="muted">Accept the connection prompt on the TV screen.</p>
+        </div>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
