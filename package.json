@@ -17,7 +17,7 @@
     "remote",
     "local"
   ],
-  "author": "",
+  "author": "Arman Singh",
   "license": "MIT",
   "engines": {
     "node": ">=18"

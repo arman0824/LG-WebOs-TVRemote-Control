@@ -258,18 +258,6 @@ At the top of the remote:
 
 ---
 
-## Light & Dark Theme
-
-The remote ships in light mode. To switch:
-
-1. Tap the **menu** icon.
-2. Tap **Settings**.
-3. Tap **Dark** (or **Light**).
-
-Your choice is saved automatically and restored on the next launch.
-
----
-
 ## How It Works
 
 A browser alone cannot scan your LAN or talk to an LG TV. This project runs a small **Node.js server** on your computer that bridges the two.
