@@ -1,137 +1,50 @@
 <!doctype html>
 <html lang="en" data-theme="light">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#E6E9EE">
-    <title>Local LG Remote</title>
-    <link rel="stylesheet" href="/styles.css">
-  </head>
-  <body>
-    <main class="stage" id="app">
-
-      <div class="remote" role="group" aria-label="LG webOS remote">
-
-        <div class="remote-glare" aria-hidden="true"></div>
-        <div class="remote-edge" aria-hidden="true"></div>
-
-        <!-- IR LED + brand -->
-        <div class="remote-top">
-          <span class="ir-led" aria-hidden="true"></span>
-          <span class="brand">LG webOS</span>
-        </div>
-
-        <!-- Tiny status pill -->
-        <div class="remote-status">
-          <div class="status-pill" id="statusPill">
-            <span class="status-dot"></span>
-            <span id="statusText">Offline</span>
-          </div>
-          <h2 class="tv-name" id="tvName">No TV</h2>
-          <p class="tv-meta" id="tvMeta">Tap menu to scan</p>
-        </div>
-
-        <!-- Top icon row -->
-        <div class="row row-icons">
-          <button class="ic-btn ic-danger" id="powerButton" data-command="powerOff" type="button" aria-label="Power">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
-          </button>
-          <button class="ic-btn" id="homeButton" data-command="buttonHome" type="button" aria-label="Home">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg>
-          </button>
-          <button class="ic-btn" id="menuButton" type="button" aria-label="Menu">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
-          </button>
-        </div>
-
-        <!-- D-Pad with flanking rockers -->
-        <div class="dpad-cluster">
-          <div class="rocker rocker--vol">
-            <button class="rocker-btn" data-command="volumeUp" type="button" aria-label="Volume up">+</button>
-            <div class="rocker-mid"><span>VOL</span></div>
-            <button class="rocker-btn" data-command="volumeDown" type="button" aria-label="Volume down">−</button>
-          </div>
-
-          <div class="dpad" aria-label="Directional pad">
-            <button class="dpad-zone dpad-up" data-command="buttonUp" type="button" aria-label="Up"></button>
-            <button class="dpad-zone dpad-left" data-command="buttonLeft" type="button" aria-label="Left"></button>
-            <button class="dpad-ok" data-command="buttonEnter" type="button" aria-label="OK">OK</button>
-            <button class="dpad-zone dpad-right" data-command="buttonRight" type="button" aria-label="Right"></button>
-            <button class="dpad-zone dpad-down" data-command="buttonDown" type="button" aria-label="Down"></button>
-            <span class="dpad-dot dpad-dot-up"></span>
-            <span class="dpad-dot dpad-dot-left"></span>
-            <span class="dpad-dot dpad-dot-right"></span>
-            <span class="dpad-dot dpad-dot-down"></span>
-          </div>
-
-          <div class="rocker rocker--ch">
-            <button class="rocker-btn" data-command="channelUp" type="button" aria-label="Channel up">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>
-            </button>
-            <div class="rocker-mid"><span>CH</span></div>
-            <button class="rocker-btn" data-command="channelDown" type="button" aria-label="Channel down">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Color keys -->
-        <div class="row row-colors">
-          <button class="color-dot color-red" data-command="red" type="button" aria-label="Red"></button>
-          <button class="color-dot color-green" data-command="green" type="button" aria-label="Green"></button>
-          <button class="color-dot color-yellow" data-command="yellow" type="button" aria-label="Yellow"></button>
-          <button class="color-dot color-blue" data-command="blue" type="button" aria-label="Blue"></button>
-        </div>
-
-        <!-- Number pad -->
-        <div class="numpad" aria-label="Number pad">
-          <button class="numpad-btn" data-digit="1" type="button">1</button>
-          <button class="numpad-btn" data-digit="2" type="button">2<span class="numpad-sub">ABC</span></button>
-          <button class="numpad-btn" data-digit="3" type="button">3<span class="numpad-sub">DEF</span></button>
-          <button class="numpad-btn" data-digit="4" type="button">4<span class="numpad-sub">GHI</span></button>
-          <button class="numpad-btn" data-digit="5" type="button">5<span class="numpad-sub">JKL</span></button>
-          <button class="numpad-btn" data-digit="6" type="button">6<span class="numpad-sub">MNO</span></button>
-          <button class="numpad-btn" data-digit="7" type="button">7<span class="numpad-sub">PQRS</span></button>
-          <button class="numpad-btn" data-digit="8" type="button">8<span class="numpad-sub">TUV</span></button>
-          <button class="numpad-btn" data-digit="9" type="button">9<span class="numpad-sub">WXYZ</span></button>
-          <button class="numpad-btn numpad-list" data-command="buttonList" type="button" aria-label="Recent list">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h16"/></svg>
-          </button>
-          <button class="numpad-btn" data-digit="0" type="button">0<span class="numpad-sub">+</span></button>
-          <button class="numpad-btn numpad-back" id="numpadBack" type="button" aria-label="Backspace">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v0a5 5 0 0 1-5 5h-4"/></svg>
-          </button>
-        </div>
-
-        <!-- Bottom nav -->
-        <div class="row row-bottom">
-          <button class="bar-btn" data-command="buttonBack" type="button" aria-label="Back">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v0a5 5 0 0 1-5 5h-4"/></svg>
-          </button>
-          <button class="bar-btn" data-command="input" type="button" aria-label="Input">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="m10 14 5 3-5 3z" fill="currentColor"/></svg>
-          </button>
-          <button class="hero-btn" id="heroButton" type="button" aria-label="Apps">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
-          </button>
-          <button class="bar-btn" data-command="buttonExit" type="button" aria-label="Exit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5v16h14V8h-4"/><path d="M9 4v4h4"/></svg>
-          </button>
-          <button class="bar-btn" id="openAppsButton" type="button" aria-label="Menu" hidden>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
-          </button>
-        </div>
-
-        <!-- Battery cap -->
-        <div class="remote-bottom" aria-hidden="true">
-          <span class="battery-cap"></span>
-        </div>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f3f2ed"><title>LG Remote — At your fingertips</title><link rel="stylesheet" href="/styles.css"></head>
+<body>
+<svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6 6a8 8 0 1 0 12 0"/></symbol><symbol id="i-input" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4M2 11h11m-3-3 3 3-3 3"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><path d="m9 3-1 3-3 1-2 4 2 2v4l4 3 3-1 3 1 4-3v-4l2-2-2-4-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="m9 5-6 6 6 6M3 11h12a6 6 0 0 1 6 6"/></symbol><symbol id="i-up" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="m14 7-5 5 5 5"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></symbol><symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 4 5 9H2v6h3l6 5ZM16 9l6 6m0-6-6 6"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8Z"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></symbol><symbol id="i-rewind" viewBox="0 0 24 24"><path d="m12 5-9 7 9 7Zm9 0-9 7 9 7Z"/></symbol><symbol id="i-forward" viewBox="0 0 24 24"><path d="m3 5 9 7-9 7Zm9 0 9 7-9 7Z"/></symbol><symbol id="i-apps" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r=".5"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.1M3 12h.1M3 18h.1"/></symbol><symbol id="i-exit" viewBox="0 0 24 24"><path d="M9 4H4v16h5M13 7l5 5-5 5M8 12h13"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-connect" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="3"/><path d="M8 21h8M12 17v4"/></symbol><symbol id="i-cc" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9H6v6h4m8-6h-4v6h4"/></symbol></svg>
+<header class="site-header"><a class="wordmark" href="/" aria-label="LG Remote home"><span class="brand-mark">L<span>G</span></span><span>remote<span class="wordmark-dot">.</span></span></a><span class="header-note">A little closer to your TV.</span><button class="header-connect" type="button" data-open-connect><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wifi"/></svg><span>Connect TV</span></button></header>
+<main class="stage" id="app">
+  <section class="intro">
+    <p class="eyebrow"><span class="tiny-dot"></span> YOUR SPACE. YOUR CONTROL.</p>
+    <h1>Your TV.<br><em>In good hands.</em></h1>
+    <p class="intro-copy">All the familiar buttons, right where you need them. Settle in and make yourself comfortable.</p>
+    <div class="device-panel">
+      <div class="device-panel-top"><span class="device-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-connect"/></svg></span><div class="status-pill" id="statusPill"><span class="status-dot"></span><span id="statusText">Offline</span></div></div>
+      <h2 id="tvName">No TV connected</h2><p id="tvMeta">Connect your LG TV to get started.</p>
+      <button id="menuButton" class="connect-action" type="button"><span id="connectLabel">Connect your TV</span><span aria-hidden="true">↗</span></button>
+    </div>
+    <div class="keyboard-note"><p class="eyebrow">MAKE YOURSELF AT HOME</p><p>Use your keyboard, too.</p><div><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd><span>Navigate</span><kbd>↵</kbd><span>Select</span></div></div>
+    <p class="local-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wifi"/></svg> On your network. In your control.</p>
+  </section>
+  <section class="remote-area" aria-label="TV remote">
+    <div class="remote-caption"><span>THE EVERYDAY REMOTE</span><span>01 / LG</span></div>
+    <div class="remote" role="group" aria-label="LG TV remote control">
+      <div class="remote-top"><span class="remote-wordmark">LG <span>REMOTE</span></span><span class="signal-led" id="signalLed" aria-label="Command activity"></span></div>
+      <div class="power-row"><button type="button" class="remote-key power-key" aria-label="Power off" title="Power off" data-command="powerOff" id="powerButton" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-power"/></svg><span>Power</span></button><span class="power-note">SMART TV<br><span>UNIVERSAL CONTROL</span></span><button type="button" class="remote-key " aria-label="Input" title="Input" data-command="input" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-input"/></svg><span>Input</span></button></div>
+      <div class="key-grid utility-row"><button type="button" class="remote-key " aria-label="Live TV" title="Live TV" data-command="liveTv" ><span>Live TV</span></button><button type="button" class="remote-key " aria-label="Captions" title="Captions" data-command="captions" ><span>Captions</span></button><button type="button" class="remote-key " aria-label="Settings" title="Settings" data-command="quickMenu" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-gear"/></svg><span>Settings</span></button></div>
+      <div class="number-pad" aria-label="Number pad"><button type="button" class="remote-key number-key" data-digit="1" aria-label="Number 1">1<small></small></button><button type="button" class="remote-key number-key" data-digit="2" aria-label="Number 2">2<small>ABC</small></button><button type="button" class="remote-key number-key" data-digit="3" aria-label="Number 3">3<small>DEF</small></button><button type="button" class="remote-key number-key" data-digit="4" aria-label="Number 4">4<small>GHI</small></button><button type="button" class="remote-key number-key" data-digit="5" aria-label="Number 5">5<small>JKL</small></button><button type="button" class="remote-key number-key" data-digit="6" aria-label="Number 6">6<small>MNO</small></button><button type="button" class="remote-key number-key" data-digit="7" aria-label="Number 7">7<small>PQRS</small></button><button type="button" class="remote-key number-key" data-digit="8" aria-label="Number 8">8<small>TUV</small></button><button type="button" class="remote-key number-key" data-digit="9" aria-label="Number 9">9<small>WXYZ</small></button><button type="button" class="remote-key small-key" aria-label="List" title="List" data-command="buttonList" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-list"/></svg><span>List</span></button><button class="remote-key number-key" data-digit="0" type="button" aria-label="Number 0">0</button><button type="button" class="remote-key small-key" aria-label="Previous" title="Previous" data-command="previousChannel" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg><span>Previous</span></button></div>
+      <div class="audio-row">
+        <div class="rocker"><button type="button" data-command="volumeUp" aria-label="Volume up"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg></button><span>VOL</span><button type="button" data-command="volumeDown" aria-label="Volume down"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-minus"/></svg></button></div>
+        <div class="audio-center"><button type="button" class="remote-key " aria-label="Mute" title="Mute" data-command="toggleMute" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-mute"/></svg><span>Mute</span></button><button type="button" class="remote-key " aria-label="Guide" title="Guide" data-command="guide" ><span>Guide</span></button><button type="button" class="remote-key " aria-label="Info" title="Info" data-command="info" ><span>Info</span></button></div>
+        <div class="rocker"><button type="button" data-command="channelUp" aria-label="Channel up"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-up"/></svg></button><span>CH</span><button type="button" data-command="channelDown" aria-label="Channel down"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg></button></div>
       </div>
-
+      <div class="navigation-top"><button type="button" class="remote-key home-key" aria-label="Home" title="Home" data-command="buttonHome" id="homeButton" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-home"/></svg><span>Home</span></button><button type="button" class="remote-key " aria-label="Apps" title="Apps" id="heroButton" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-apps"/></svg><span>Apps</span></button></div>
+      <div class="dpad" role="group" aria-label="Directional pad">
+        <button type="button" class="remote-key dpad-zone dpad-up" aria-label="Up" title="Up" data-command="buttonUp" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-up"/></svg><span>Up</span></button><button type="button" class="remote-key dpad-zone dpad-left" aria-label="Left" title="Left" data-command="buttonLeft" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-left"/></svg><span>Left</span></button><button type="button" class="remote-key dpad-ok" aria-label="OK" title="OK" data-command="buttonEnter" ><span>OK</span></button><button type="button" class="remote-key dpad-zone dpad-right" aria-label="Right" title="Right" data-command="buttonRight" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-right"/></svg><span>Right</span></button><button type="button" class="remote-key dpad-zone dpad-down" aria-label="Down" title="Down" data-command="buttonDown" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span>Down</span></button>
+      </div>
+      <div class="navigation-bottom"><button type="button" class="remote-key " aria-label="Back" title="Back" data-command="buttonBack" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg><span>Back</span></button><button type="button" class="remote-key " aria-label="Exit" title="Exit" data-command="buttonExit" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-exit"/></svg><span>Exit</span></button></div>
+      <div class="media-row" role="group" aria-label="Playback controls"><button type="button" class="remote-key " aria-label="Rewind" title="Rewind" data-command="rewind" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rewind"/></svg><span>Rewind</span></button><button type="button" class="remote-key " aria-label="Play" title="Play" data-command="play" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg><span>Play</span></button><button type="button" class="remote-key " aria-label="Pause" title="Pause" data-command="pause" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pause"/></svg><span>Pause</span></button><button type="button" class="remote-key " aria-label="Stop" title="Stop" data-command="stop" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-stop"/></svg><span>Stop</span></button><button type="button" class="remote-key " aria-label="Forward" title="Forward" data-command="fastForward" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-forward"/></svg><span>Forward</span></button></div>
+      <div class="color-row" role="group" aria-label="Color function keys"><button type="button" class="remote-key color-key color-red" aria-label="Red" title="Red" data-command="red" data-color="red"><span>Red</span></button><button type="button" class="remote-key color-key color-green" aria-label="Green" title="Green" data-command="green" data-color="green"><span>Green</span></button><button type="button" class="remote-key color-key color-yellow" aria-label="Yellow" title="Yellow" data-command="yellow" data-color="yellow"><span>Yellow</span></button><button type="button" class="remote-key color-key color-blue" aria-label="Blue" title="Blue" data-command="blue" data-color="blue"><span>Blue</span></button></div>
+      <details class="more-controls"><summary>More controls <span>+</span></summary><div class="key-grid"><button type="button" class="remote-key " aria-label="Teletext" title="Teletext" data-command="teletext" ><span>Teletext</span></button><button type="button" class="remote-key " aria-label="Text options" title="Text options" data-command="textOption" ><span>Text options</span></button><button type="button" class="remote-key " aria-label="Audio desc." title="Audio desc." data-command="audioDescription" ><span>Audio desc.</span></button><button type="button" class="remote-key " aria-label="Aspect ratio" title="Aspect ratio" data-command="aspectRatio" ><span>Aspect ratio</span></button><button type="button" class="remote-key record-key" aria-label="Record" title="Record" data-command="record" ><span>Record</span></button><button type="button" class="remote-key " aria-label="Recordings" title="Recordings" data-command="recordings" ><span>Recordings</span></button></div></details>
+      <div class="remote-footer"><span>LG SMART TV</span><span class="grip" aria-hidden="true"></span></div>
+    </div>
+    <p class="remote-footnote">Familiar by design. Connected by Wi-Fi.</p>
+  </section>
       <!-- DRAWER -->
       <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-      <aside class="drawer" id="drawer" aria-hidden="true">
-        <div class="drawer-handle" aria-hidden="true"></div>
+      <aside class="drawer" id="drawer" aria-hidden="true" inert>
+        <div class="panel-top"><span class="eyebrow">REMOTE / SETUP</span><button id="closeDrawerButton" class="close-button" type="button" aria-label="Close connection settings">×</button></div>
         <nav class="drawer-tabs" role="tablist">
           <button class="drawer-tab is-active" data-drawer-tab="connect" type="button" role="tab">Connect</button>
           <button class="drawer-tab" data-drawer-tab="settings" type="button" role="tab">Settings</button>
@@ -182,7 +95,7 @@
       </aside>
 
       <!-- APPS VIEW -->
-      <section class="apps-view" id="appsView" aria-hidden="true">
+      <section class="apps-view" id="appsView" aria-hidden="true" inert>
         <header class="apps-header">
           <button class="ic-btn" id="closeAppsButton" type="button" aria-label="Back">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
@@ -208,8 +121,8 @@
       </div>
 
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    </main>
 
-    <script src="/app.js"></script>
-  </body>
-</html>
+</main>
+<footer class="site-footer"><span>MADE FOR YOUR LIVING ROOM</span><span>webOS & NetCast compatible</span><button type="button" id="appearanceButton">Appearance ↗</button></footer>
+<script src="/app.js"></script>
+</body></html>

@@ -43,7 +43,6 @@ function bindRefs() {
   el.serverInfo = $("#serverInfo");
 
   el.appsView = $("#appsView");
-  el.openAppsButton = $("#openAppsButton");
   el.heroButton = $("#heroButton");
   el.closeAppsButton = $("#closeAppsButton");
   el.refreshAppsButton = $("#refreshAppsButton");
@@ -96,12 +95,11 @@ function renderStatus() {
     const meta = [state.device.host];
     if (state.device.model) meta.push(state.device.model);
     el.tvMeta.textContent = meta.join(" • ");
-    el.openAppsButton.hidden = false;
   } else {
     el.tvName.textContent = "No TV connected";
-    el.tvMeta.textContent = "Tap menu to scan or connect";
-    el.openAppsButton.hidden = true;
+    el.tvMeta.textContent = "Connect your LG TV to get started.";
   }
+  $("#connectLabel").textContent = state.connected ? "Manage TV" : "Connect TV";
   el.serverInfo.textContent = state.device ? `Saved TV: ${state.device.name} (${state.device.host})` : "Select a TV or enter its IP in Connect to manage pairing.";
 }
 
@@ -153,13 +151,17 @@ function openDrawer() {
   state.drawerOpen = true;
   el.drawer.classList.add("is-open");
   el.drawer.setAttribute("aria-hidden", "false");
+  el.drawer.inert = false;
+  $("#closeDrawerButton").focus();
   el.drawerBackdrop.hidden = false;
   requestAnimationFrame(() => el.drawerBackdrop.classList.add("is-visible"));
 }
 function closeDrawer() {
   state.drawerOpen = false;
   el.drawer.classList.remove("is-open");
+  el.drawer.inert = true;
   el.drawer.setAttribute("aria-hidden", "true");
+  el.menuButton.focus();
   el.drawerBackdrop.classList.remove("is-visible");
   setTimeout(() => { if (!state.drawerOpen) el.drawerBackdrop.hidden = true; }, 260);
 }
@@ -167,6 +169,7 @@ function setDrawerTab(name) {
   state.drawerTab = name;
   el.drawerTabs.forEach((tab) => {
     tab.classList.toggle("is-active", tab.dataset.drawerTab === name);
+    tab.setAttribute("aria-selected", String(tab.dataset.drawerTab === name));
   });
   el.drawerPanels.forEach((panel) => {
     panel.hidden = panel.dataset.drawerPanel !== name;
@@ -179,11 +182,15 @@ function openAppsView() {
   if (state.device?.protocol === "netcast") { command("openApps"); return; }
   el.appsView.classList.add("is-open");
   el.appsView.setAttribute("aria-hidden", "false");
+  el.appsView.inert = false;
+  el.closeAppsButton.focus();
   if (!state.apps.length) loadApps();
 }
 function closeAppsView() {
   el.appsView.classList.remove("is-open");
+  el.appsView.inert = true;
   el.appsView.setAttribute("aria-hidden", "true");
+  el.heroButton.focus();
 }
 
 /* THEME */
@@ -282,9 +289,17 @@ async function connect(device) {
   }
 }
 
-async function command(name, payload) {
+let commandQueue = Promise.resolve();
+function command(name, payload) {
+  const pending = commandQueue.then(() => performCommand(name, payload));
+  commandQueue = pending.catch(() => {});
+  return pending;
+}
+
+async function performCommand(name, payload) {
   if (!state.connected) {
     toast("Connect to your TV first.");
+    setDrawerTab("connect"); openDrawer();
     return;
   }
   try {
@@ -292,6 +307,11 @@ async function command(name, payload) {
       method: "POST",
       body: JSON.stringify({ command: name, payload })
     });
+    const led = $("#signalLed");
+    led.classList.add("flash");
+    clearTimeout(performCommand.ledTimer);
+    performCommand.ledTimer = setTimeout(() => led.classList.remove("flash"), 180);
+    if (name === "powerOff") refreshStatus();
     if (name === "getApps") {
       state.apps = (result.response && result.response.payload && result.response.payload.apps) || [];
       renderApps();
@@ -314,6 +334,9 @@ async function launchApp(app) {
 function wireEvents() {
   el.menuButton.addEventListener("click", () => { setDrawerTab("connect"); openDrawer(); });
   el.drawerBackdrop.addEventListener("click", closeDrawer);
+  $("#closeDrawerButton").addEventListener("click", closeDrawer);
+  $$("[data-open-connect]").forEach(button => button.addEventListener("click", () => { setDrawerTab("connect"); openDrawer(); }));
+  $("#appearanceButton").addEventListener("click", () => { setDrawerTab("settings"); openDrawer(); });
   el.drawerTabs.forEach((tab) => {
     tab.addEventListener("click", () => setDrawerTab(tab.dataset.drawerTab));
   });
@@ -354,61 +377,56 @@ function wireEvents() {
     } catch (error) { toast(error.message); }
   });
 
-  el.openAppsButton.addEventListener("click", openAppsView);
   el.heroButton.addEventListener("click", openAppsView);
   el.closeAppsButton.addEventListener("click", closeAppsView);
   el.refreshAppsButton.addEventListener("click", loadApps);
 
-  // Number pad: build a channel buffer; OK/Enter tunes it
-  let channelBuffer = "";
-  function updateChannelBuffer() {
-    el.tvMeta.textContent = channelBuffer ? `Channel: ${channelBuffer}` : (state.connected && state.device ? `${state.device.host}` : "Tap menu to scan");
-  }
-  $$(".numpad-btn[data-digit]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (channelBuffer.length >= 5) return;
-      channelBuffer += btn.dataset.digit;
-      updateChannelBuffer();
-      clearTimeout(updateChannelBuffer.timer);
-      updateChannelBuffer.timer = setTimeout(() => { channelBuffer = ""; updateChannelBuffer(); }, 3500);
-    });
+  // Send each number immediately, just like the physical remote.
+  $$("[data-digit]").forEach(button => {
+    button.addEventListener("click", () => command("digit", { digit: button.dataset.digit }));
   });
-  $("#numpadBack").addEventListener("click", () => {
-    if (channelBuffer.length > 0) {
-      channelBuffer = channelBuffer.slice(0, -1);
-      updateChannelBuffer();
-    } else {
-      command("buttonBack");
-    }
-  });
-  // While channel buffer has digits, Enter tunes the channel
-  document.addEventListener("keydown", (event) => {
-    if (event.target && (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA")) return;
-    if (channelBuffer && (event.key === "Enter" || event.key === "buttonEnter")) {
-      event.preventDefault();
-      const ch = channelBuffer; channelBuffer = ""; updateChannelBuffer();
-      command("channel", { channelId: ch, major: ch });
-    }
+  $$("[data-command]").forEach(button => {
+    button.addEventListener("click", () => command(button.dataset.command));
   });
 
-  $$("[data-command]").forEach((button) => {
-    button.addEventListener("click", () => {
-      if (button.dataset.command === "buttonEnter" && channelBuffer) {
-        const ch = channelBuffer; channelBuffer = ""; updateChannelBuffer();
-        command("channel", { major: ch });
-      } else command(button.dataset.command);
-    });
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.defaultPrevented) return;
-    if (event.target && (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA")) return;
+  document.addEventListener("keydown", event => {
+    const openPanel = state.drawerOpen ? el.drawer : el.appsView.classList.contains("is-open") ? el.appsView : null;
+    if (event.key === "Tab" && openPanel) {
+      const focusable = [...openPanel.querySelectorAll("button:not(:disabled), input:not(:disabled), a[href], summary")]
+        .filter(node => node.getClientRects().length);
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (first && (!openPanel.contains(document.activeElement) || (event.shiftKey && document.activeElement === first))) {
+        event.preventDefault(); (event.shiftKey ? last : first).focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first.focus();
+      }
+    }
+    if (event.key === "Escape" && state.drawerOpen) {
+      event.preventDefault(); closeDrawer(); return;
+    }
+    if (event.key === "Escape" && el.appsView.classList.contains("is-open")) {
+      event.preventDefault(); closeAppsView(); return;
+    }
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.target?.matches("input, textarea, select, [contenteditable=true]")) return;
+    if (state.drawerOpen || el.appsView.classList.contains("is-open")) return;
+    // Keep native keyboard activation for focused buttons and disclosure controls.
+    if (event.target?.closest("button, summary, a") && (event.key === "Enter" || event.key === " ")) return;
+    if (/^\d$/.test(event.key)) {
+      event.preventDefault(); command("digit", { digit: event.key }); return;
+    }
     const map = {
-      ArrowUp: "buttonUp", ArrowDown: "buttonDown",
-      ArrowLeft: "buttonLeft", ArrowRight: "buttonRight",
-      Enter: "buttonEnter", Escape: "buttonBack", " ": "play"
+      ArrowUp: "buttonUp", ArrowDown: "buttonDown", ArrowLeft: "buttonLeft", ArrowRight: "buttonRight",
+      Enter: "buttonEnter", Escape: "buttonBack", " ": "play", m: "toggleMute", M: "toggleMute",
+      "+": "volumeUp", "-": "volumeDown"
     };
-    if (map[event.key]) { event.preventDefault(); command(map[event.key]); }
+    if (map[event.key]) {
+      event.preventDefault();
+      command(map[event.key]);
+      const button = document.querySelector(`[data-command="${map[event.key]}"]`);
+      button?.classList.add("is-pressed");
+      setTimeout(() => button?.classList.remove("is-pressed"), 130);
+    }
   });
 }
 
@@ -417,6 +435,7 @@ function init() {
   loadPreferences();
   applyTheme();
   wireEvents();
+  setDrawerTab("connect");
   refreshStatus();
   setInterval(refreshStatus, 5000);
 }

@@ -4,7 +4,10 @@ const KEY_CODES = {
   buttonEnter: 20, buttonHome: 21, buttonBack: 23, volumeUp: 24, volumeDown: 25,
   mute: 26, unmute: 26, channelUp: 27, channelDown: 28, blue: 29, green: 30,
   red: 31, yellow: 32, play: 33, pause: 34, stop: 35, fastForward: 36,
-  rewind: 37, input: 47, buttonExit: 412, openApps: 417
+  rewind: 37, input: 47, buttonExit: 412, openApps: 417,
+  toggleMute: 26, liveTv: 43, guide: 44, info: 45, aspectRatio: 46,
+  captions: 49, buttonList: 50, teletext: 51, previousChannel: 403,
+  quickMenu: 405, textOption: 406, audioDescription: 407, record: 40, recordings: 41
 };
 
 function tag(xml, name) {
@@ -62,6 +65,11 @@ class NetcastClient {
 
   async command(name, payload = {}) {
     if (this.closed) throw new Error("Connect to a TV first.");
+    if (name === "digit") {
+      if (!/^[0-9]$/.test(String(payload.digit))) throw new Error("Enter a single digit from 0 to 9.");
+      await this.sendKey(Number(payload.digit) + 2);
+      return { ok: true };
+    }
     if (name === "channel") {
       const digits = String(payload.major || payload.channelId || "");
       if (!/^\d{1,5}$/.test(digits)) throw new Error("Enter a valid channel number.");
@@ -89,4 +97,4 @@ class NetcastClient {
   close() { this.closed = true; this.session = ""; }
 }
 
-module.exports = { NetcastClient };
+module.exports = { NetcastClient, KEY_CODES };

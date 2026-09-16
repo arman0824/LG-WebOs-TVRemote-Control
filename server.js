@@ -55,6 +55,20 @@ const COMMANDS = {
   channelUp: { button: "CHANNELUP" },
   channelDown: { button: "CHANNELDOWN" },
   input: { button: "INPUT" },
+  toggleMute: { button: "MUTE" },
+  liveTv: { button: "TV" },
+  guide: { button: "GUIDE" },
+  info: { button: "INFO" },
+  captions: { button: "CC" },
+  quickMenu: { button: "QMENU" },
+  buttonList: { button: "LIST" },
+  previousChannel: { button: "FLASHBACK" },
+  teletext: { button: "TELETEXT" },
+  textOption: { button: "TEXTOPTION" },
+  audioDescription: { button: "AD" },
+  aspectRatio: { button: "ASPECT_RATIO" },
+  record: { button: "RECORD" },
+  recordings: { button: "RECLIST" },
   red: { button: "RED" },
   green: { button: "GREEN" },
   yellow: { button: "YELLOW" },
@@ -697,6 +711,11 @@ async function handleApi(req, res, pathname) {
       if (!activeClient || activeClient.closed) throw new Error("Connect to a TV first.");
       const body = await readBody(req);
       if (activeClient.protocol === "netcast") return sendJson(res, 200, await activeClient.command(body.command, body.payload));
+      if (body.command === "digit") {
+        const digit = String(body.payload?.digit);
+        if (!/^[0-9]$/.test(digit)) throw new Error("Enter a single digit from 0 to 9.");
+        return sendJson(res, 200, await sendButton(digit));
+      }
       const command = COMMANDS[body.command];
       if (!command) throw new Error(`Unknown command: ${body.command}`);
       if (command.button) {
@@ -749,4 +768,4 @@ if (require.main === module) server.listen(PORT, HOST, () => {
   console.log("Keep your LG TV powered on and on the same Wi-Fi/network as this Mac.");
 });
 
-module.exports = { TinyWebSocket, WebOsClient, encodeFrame, decodeFrame, server };
+module.exports = { TinyWebSocket, WebOsClient, encodeFrame, decodeFrame, server, COMMANDS };

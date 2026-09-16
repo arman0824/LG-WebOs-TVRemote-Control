@@ -4,6 +4,34 @@ const http = require("node:http");
 const { once } = require("node:events");
 const { NetcastClient } = require("../netcast");
 const { TinyWebSocket, WebOsClient, encodeFrame } = require("../server");
+const fs = require("node:fs");
+const path = require("node:path");
+
+test("every visible remote command has a webOS and NetCast implementation", () => {
+  const { COMMANDS } = require("../server");
+  const { KEY_CODES } = require("../netcast");
+  const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
+  for (const [, name] of html.matchAll(/data-command="([^"]+)"/g)) {
+    assert.ok(COMMANDS[name], `Missing webOS command: ${name}`);
+    assert.ok(Number.isInteger(KEY_CODES[name]), `Missing NetCast command: ${name}`);
+  }
+});
+
+test("NetCast number keys send individual key presses and reject invalid digits", async () => {
+  const client = new NetcastClient({ host: "127.0.0.1" });
+  client.closed = false;
+  const pressed = [];
+  client.sendKey = async code => pressed.push(code);
+  await client.command("digit", { digit: "0" });
+  await client.command("digit", { digit: "9" });
+  await client.command("toggleMute");
+  await client.command("guide");
+  assert.deepEqual(pressed, [2, 11, 26, 44]);
+  for (const digit of ["10", "-1", "", "<value>", null]) {
+    await assert.rejects(client.command("digit", { digit }), /single digit/);
+  }
+  assert.equal(pressed.length, 4);
+});
 
 test("NetCast detects ROAP, requests a code, authenticates and sends session-bound keys", async (t) => {
   const requests = [];

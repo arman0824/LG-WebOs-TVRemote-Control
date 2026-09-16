@@ -2,7 +2,10 @@
 
 A local-only web remote for LG webOS and NetCast TVs. Scan your network, pair once, and control your TV from any browser — on your Mac or your phone. No cloud. No accounts. No npm dependencies.
 
-The UI looks and feels like a real remote, with a neumorphic light/dark theme, an elongated device shape, a large central D-pad flanked by volume and channel rockers, a full number pad, and an electric-blue hero button that opens your installed apps.
+The remote has a charcoal body, raised keys, a circular navigation pad, separate
+volume and channel rockers, a full number pad, playback controls, and a Home key.
+The layout adapts to phones and desktops. Connection and pairing are available
+from **Connect TV**, including a permanently visible NetCast code field.
 
 ---
 
@@ -34,21 +37,24 @@ The UI looks and feels like a real remote, with a neumorphic light/dark theme, a
 - **Phone mode** — control the TV from any device on the same Wi-Fi
 
 ### Remote
-- **Power, Home, Menu** — top icon row
-- **Circular D-pad** — large, neumorphic, with recessed OK button and four directional indicators
-- **Volume rocker** — plus / minus / VOL label, soft raised pill
-- **Channel rocker** — up / down / CH label, soft raised pill
-- **Color keys** — red, green, yellow, blue
-- **Number pad** — full 3×4 layout with letter sub-labels (1 ABC, 2 DEF …) and a backspace key
-- **Media controls** — rewind, play, pause, fast-forward
-- **Apps launcher** — the blue hero button opens a grid of every app installed on the TV, tap to launch
+- Power off, input selection, Live TV, captions, and TV settings
+- Number keys (0–9), channel list, and previous channel
+- Volume and channel rockers, mute toggle, Guide, and Info
+- Circular D-pad, OK, Home, Apps, Back, and Exit
+- Play, pause, stop, rewind, and fast-forward
+- Four color function keys
+- **More controls**: teletext, text options, audio description, aspect ratio, record, and recordings
+- Keyboard: arrows, Enter, Escape, digits, `M` for mute, `+` / `-` for volume
 
 ### Design
-- **Neumorphic UI** — soft surfaces, gentle shadows, premium feel
-- **Light & Dark themes** — toggle in the drawer, persists across sessions
-- **Remote-shaped frame** — rounded device body with glossy top reflection, IR LED, and brand label
-- **Fully responsive** — comfortable on a phone screen or a desktop browser
-- **Keyboard shortcuts** — arrow keys move the D-pad, Enter is OK, Space is Play/Pause, Esc is Back
+- Charcoal physical-style remote with raised keys and button feedback
+- Responsive desktop layout and a focused mobile view
+- Light and dark page themes under **Appearance**
+- Connection drawer with manual IP, network scan, and six-digit pairing
+
+Buttons are mapped for webOS and NetCast. Availability of features such as
+recording, teletext, captions, and programme information depends on the TV and
+current input. The power button turns the TV off; network wake is not implemented.
 
 ---
 
@@ -196,65 +202,17 @@ To forget a saved TV, tap **menu → Settings → Forget saved TV key**.
 
 ## Using the Remote
 
-Here's what every part of the remote does.
+1. Click **Connect TV**, scan or enter the TV IP, and pair.
+2. Use number keys directly, as on the physical remote. Press **OK** to confirm
+   entries on the TV when needed.
+3. Use **Home** for the TV launcher and **Apps** for installed apps. On NetCast,
+   Apps opens the TV's own app screen.
+4. Open **More controls** for teletext, accessibility, aspect ratio, and recording.
+5. Use **Appearance** in the page footer to switch the light/dark page theme.
 
-### Top icon row
-
-| Button | Action |
-|---|---|
-| 🔴 **Power** (red) | Turn the TV off |
-| 🏠 **Home** | Open the webOS launcher (home screen) |
-| ☰ **Menu** | Open the drawer — Connect, Settings |
-
-### D-pad (center)
-
-A large circular control. Tap any quadrant to navigate, tap the center **OK** to confirm. Four small dots mark the cardinal directions.
-
-### Rockers (flanking the D-pad)
-
-| Rocker | Buttons |
-|---|---|
-| **VOL** (left) | `+` volume up, `−` volume down |
-| **CH** (right) | `^` channel up, `v` channel down |
-
-### Color keys
-
-Red · Green · Yellow · Blue — used by apps for shortcuts (e.g., teletext, recordings, special menus).
-
-### Number pad
-
-Type a channel number digit by digit. The TV meta line shows what you've typed. Press **OK** (or **Enter** on a keyboard) to tune to that channel.
-
-The **backspace** key (right of `0`) deletes one digit. If the buffer is empty, it acts as **Back**.
-
-### Bottom row
-
-| Button | Action |
-|---|---|
-| **Back** | Go back one step |
-| **Input** | Switch input source (HDMI 1, HDMI 2, TV, etc.) |
-| 🔵 **Hero (blue)** | Open the **Apps** launcher — every app installed on the TV, tap to launch |
-| **Exit** | Close the current menu or app |
-| **Menu** | Open the drawer |
-
-### Apps launcher
-
-Tap the blue hero button. A grid of every app installed on your TV appears. Tap any tile to launch it on the TV.
-
-### Status pill
-
-At the top of the remote:
-- **Offline** (grey dot) — not connected
-- **Connected** (blue dot) — paired and ready
-
-### Keyboard shortcuts
-
-| Key | Action |
-|---|---|
-| `↑` `↓` `←` `→` | D-pad |
-| `Enter` | OK |
-| `Esc` | Back |
-| `Space` | Play / Pause |
+The small LED on the remote flashes when a command succeeds. Connection errors
+appear on the page. Keyboard controls are suspended while editing the IP or
+pairing code, and Escape closes open panels.
 
 ---
 
