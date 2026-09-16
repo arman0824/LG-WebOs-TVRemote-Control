@@ -7,6 +7,7 @@ const os = require("os");
 const path = require("path");
 const tls = require("tls");
 const { URL } = require("url");
+const { NetcastClient } = require("./netcast");
 
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || "127.0.0.1";
@@ -17,6 +18,7 @@ const KEY_FILE = path.join(ROOT, ".tv-keys.json");
 let activeClient = null;
 let activeDevice = null;
 let activeInputSocket = null;
+let connecting = false;
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -349,7 +351,7 @@ class TinyWebSocket {
     this.socket.write(encodeFrame(Buffer.from(text), 0x1));
   }
 
-  request(payload, timeoutMs = 15000) {
+  request(payload, timeoutMs = 15000, accept = () => true) {
     const id = payload.id || `req_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     const message = { ...payload, id };
     return new Promise((resolve, reject) => {
@@ -357,8 +359,13 @@ class TinyWebSocket {
         this.pending.delete(id);
         reject(new Error(`Timed out waiting for ${message.uri || message.type || id}.`));
       }, timeoutMs);
-      this.pending.set(id, { resolve, reject, timer });
-      this.sendText(JSON.stringify(message));
+      this.pending.set(id, { resolve, reject, timer, accept });
+      try { this.sendText(JSON.stringify(message)); }
+      catch (error) {
+        clearTimeout(timer);
+        this.pending.delete(id);
+        reject(error);
+      }
     });
   }
 
@@ -383,6 +390,7 @@ class TinyWebSocket {
         const message = JSON.parse(text);
         if (message.id && this.pending.has(message.id)) {
           const pending = this.pending.get(message.id);
+          if (message.type !== "error" && !pending.accept(message)) continue;
           clearTimeout(pending.timer);
           this.pending.delete(message.id);
           if (message.type === "error") {
@@ -407,8 +415,9 @@ class TinyWebSocket {
 
   close() {
     this.closed = true;
+    this.rejectAll(new Error("WebSocket closed."));
     try {
-      if (this.socket && !this.socket.destroyed) this.socket.end();
+      if (this.socket && !this.socket.destroyed) this.socket.destroy();
     } catch {
       // Nothing else to do.
     }
@@ -479,7 +488,10 @@ class WebOsClient {
     this.host = device.host;
     this.clientKey = clientKey;
     this.ws = null;
+    this.protocol = "webos";
   }
+
+  get closed() { return !this.ws || this.ws.closed; }
 
   async connect() {
     const urls = [
@@ -488,16 +500,17 @@ class WebOsClient {
     ];
     let lastError;
     for (const url of urls) {
+      const ws = new TinyWebSocket(url);
       try {
-        const ws = new TinyWebSocket(url);
         await ws.connect();
         this.ws = ws;
         return;
       } catch (error) {
+        ws.close();
         lastError = error;
       }
     }
-    throw lastError || new Error("Could not connect to LG TV.");
+    throw new Error(`Cannot reach the TV's webOS control service at ${this.host} (ports 3001/3000). Check the TV IP, power and network remote-control settings. ${lastError?.message || ""}`);
   }
 
   async register() {
@@ -507,23 +520,16 @@ class WebOsClient {
       manifest: {
         manifestVersion: 1,
         appVersion: "1.0",
-        signed: {
-          created: "2026-06-30T00:00:00.000Z",
-          appId: "com.local.codex.lgremote",
-          vendorId: "com.local",
-          localizedAppNames: { "": "Local LG Remote" },
-          localizedVendorNames: { "": "Local" },
-          permissions: webOsPermissions(),
-          serial: "local-lg-remote"
-        },
-        permissions: webOsPermissions(),
-        signatures: []
+        permissions: webOsPermissions()
       }
     };
     if (this.clientKey) payload["client-key"] = this.clientKey;
-    const response = await this.ws.request({ type: "register", payload }, 90000);
+    // A 'response' with pairingType PROMPT is only an acknowledgement.
+    const response = await this.ws.request({ type: "register", payload }, 90000,
+      (message) => message.type === "registered");
     const key = response.payload && response.payload["client-key"];
-    if (key) this.clientKey = key;
+    if (!key) throw new Error("The TV did not return a pairing key.");
+    this.clientKey = key;
     return response;
   }
 
@@ -582,17 +588,35 @@ async function sendButton(name) {
   return { ok: true, button: name };
 }
 
-async function connectToDevice(device) {
+async function connectToDevice(device, pairingCode = "") {
   const host = normalizeHost(device.host);
   if (!host) throw new Error("Missing TV IP address.");
   const keys = readJsonFile(KEY_FILE, {});
-  const key = keys[host] || "";
-  const client = new WebOsClient({ ...device, host }, key);
-  await client.connect();
-  const registration = await client.register();
-  if (client.clientKey) {
-    keys[host] = client.clientKey;
+  const saved = keys[host];
+  const key = typeof saved === "string" ? saved : saved?.key || "";
+  const legacy = new NetcastClient({ ...device, host }, saved?.protocol === "netcast" ? key : "");
+  const isNetcast = await legacy.detect();
+  const client = isNetcast ? legacy : new WebOsClient({ ...device, host }, typeof saved === "string" || saved?.protocol === "webos" ? key : "");
+  try {
+    if (isNetcast) {
+      if (!pairingCode && client.clientKey) {
+        try { await client.register(); }
+        catch (error) { if (error.code !== 401) throw error; }
+      }
+      if (pairingCode) await client.register(pairingCode);
+      if (client.closed) {
+        await client.showPairingCode();
+        return { ok: true, pairingRequired: true, protocol: "netcast", device: { ...device, host } };
+      }
+    } else {
+      await client.connect();
+      await client.register();
+    }
+    keys[host] = { protocol: client.protocol, key: client.clientKey };
     writeJsonFile(KEY_FILE, keys);
+  } catch (error) {
+    client.close();
+    throw error;
   }
   if (activeClient) activeClient.close();
   if (activeInputSocket) activeInputSocket.close();
@@ -600,6 +624,7 @@ async function connectToDevice(device) {
   activeDevice = {
     name: device.name || "LG webOS TV",
     host,
+    protocol: client.protocol,
     model: device.model || "",
     manufacturer: device.manufacturer || "LG"
   };
@@ -607,15 +632,16 @@ async function connectToDevice(device) {
   return {
     ok: true,
     device: activeDevice,
-    paired: Boolean(registration.payload && registration.payload["client-key"])
+    paired: true
   };
 }
 
 async function handleApi(req, res, pathname) {
   try {
     if (req.method === "GET" && pathname === "/api/status") {
+      if (activeClient?.protocol === "netcast") await activeClient.checkStatus();
       return sendJson(res, 200, {
-        connected: Boolean(activeClient && activeClient.ws && !activeClient.ws.closed),
+        connected: Boolean(activeClient && !activeClient.closed),
         device: activeDevice,
         localInterfaces: localInterfaces()
       });
@@ -628,14 +654,34 @@ async function handleApi(req, res, pathname) {
 
     if (req.method === "POST" && pathname === "/api/connect") {
       const body = await readBody(req);
+      if (connecting) return sendJson(res, 409, { error: "A pairing attempt is already in progress." });
       const device = {
         name: body.name || body.host || "LG webOS TV",
         host: normalizeHost(body.host),
         model: body.model || "",
         manufacturer: body.manufacturer || "LG"
       };
-      const result = await connectToDevice(device);
-      return sendJson(res, 200, result);
+      connecting = true;
+      try {
+        const result = await connectToDevice(device, String(body.pairingCode || "").trim());
+        return sendJson(res, 200, result);
+      } finally { connecting = false; }
+    }
+
+    if (req.method === "POST" && pathname === "/api/forget") {
+      const body = await readBody(req);
+      const host = normalizeHost(body.host);
+      if (!host) throw new Error("Enter or select the TV IP to forget first.");
+      if (connecting) throw new Error("Wait for the current pairing attempt to finish.");
+      const keys = readJsonFile(KEY_FILE, {});
+      delete keys[host];
+      writeJsonFile(KEY_FILE, keys);
+      if (activeDevice?.host === host) {
+        activeInputSocket?.close();
+        activeClient?.close();
+        activeInputSocket = activeClient = activeDevice = null;
+      }
+      return sendJson(res, 200, { ok: true });
     }
 
     if (req.method === "POST" && pathname === "/api/disconnect") {
@@ -648,8 +694,9 @@ async function handleApi(req, res, pathname) {
     }
 
     if (req.method === "POST" && pathname === "/api/command") {
-      if (!activeClient || activeClient.ws.closed) throw new Error("Connect to a TV first.");
+      if (!activeClient || activeClient.closed) throw new Error("Connect to a TV first.");
       const body = await readBody(req);
+      if (activeClient.protocol === "netcast") return sendJson(res, 200, await activeClient.command(body.command, body.payload));
       const command = COMMANDS[body.command];
       if (!command) throw new Error(`Unknown command: ${body.command}`);
       if (command.button) {
@@ -697,7 +744,9 @@ const server = http.createServer((req, res) => {
   serveStatic(req, res, url.pathname);
 });
 
-server.listen(PORT, HOST, () => {
+if (require.main === module) server.listen(PORT, HOST, () => {
   console.log(`Local LG TV Remote is running at http://${HOST}:${PORT}`);
   console.log("Keep your LG TV powered on and on the same Wi-Fi/network as this Mac.");
 });
+
+module.exports = { TinyWebSocket, WebOsClient, encodeFrame, decodeFrame, server };

@@ -4,6 +4,7 @@
   "description": "A local-only LG webOS TV scanner, pairing bridge, and remote control website.",
   "main": "server.js",
   "scripts": {
+    "test": "node --test",
     "start": "node server.js",
     "start:bg": "node scripts/server-manager.js start",
     "start:phone": "node scripts/server-manager.js start --host=0.0.0.0",

@@ -1,6 +1,6 @@
 # Local LG TV Remote
 
-A beautifully designed, local-only web remote for LG webOS TVs. Scan your network, pair once, and control your TV from any browser — on your Mac or your phone. No cloud. No accounts. No npm dependencies.
+A local-only web remote for LG webOS and NetCast TVs. Scan your network, pair once, and control your TV from any browser — on your Mac or your phone. No cloud. No accounts. No npm dependencies.
 
 The UI looks and feels like a real remote, with a neumorphic light/dark theme, an elongated device shape, a large central D-pad flanked by volume and channel rockers, a full number pad, and an electric-blue hero button that opens your installed apps.
 
@@ -58,7 +58,7 @@ The UI looks and feels like a real remote, with a neumorphic light/dark theme, a
 |---|---|
 | A computer running **macOS, Linux, or Windows** | The server runs here |
 | **Node.js 18 or newer** | [nodejs.org](https://nodejs.org) |
-| An **LG Smart TV running webOS** | Most LG TVs from 2014 onward |
+| An **LG Smart TV running webOS or NetCast with ROAP** | webOS uses an approval prompt; NetCast uses a six-digit code |
 | **Same local network** | Your computer and TV must be on the same Wi-Fi or LAN |
 | For phone control | Your phone must also be on the same Wi-Fi |
 
@@ -103,7 +103,7 @@ Your phone, your computer, and your TV must all be on the **same Wi-Fi** network
 1. Tap the **menu icon** (top-right of the remote, three lines).
 2. Tap **Scan network** — your LG TV should appear in a few seconds.
 3. Tap your TV in the list.
-4. A "Pairing with your LG TV" dialog appears — **accept the prompt on your TV screen**.
+4. **Accept the prompt on your TV screen**, or for NetCast TVs **enter the displayed six-digit code** in the app and press **Pair TV**.
 
 You're connected. The status pill at the top of the remote turns blue and reads **Connected**.
 
@@ -269,6 +269,7 @@ Browser or phone  →  local Node server  →  LG webOS TV
 The server:
 - Serves the website from `public/`
 - Scans your network with **SSDP**
+- Detects NetCast through **ROAP HTTP** (port `8080`) and pairs using the TV's numeric code
 - Connects to LG webOS over **WebSocket** (ports `3001` / `3000`)
 - Sends LG **`ssap://`** remote-control commands
 
@@ -293,12 +294,26 @@ The browser sends button presses as JSON to the server (`POST /api/command`), an
 - Try the **Manual IP** option instead
 - Some routers block multicast/SSDP — check router settings or use Manual IP
 
+### Older LG TVs (NetCast, including 32LB582B)
+
+These TVs use a numeric code instead of a webOS approval popup. The app detects
+their ROAP service on port 8080 automatically. Select the TV, enter the six-digit
+code displayed on its screen, and press **Pair TV**. The code is saved locally for
+reconnection. The Apps button opens the TV's own Apps screen on these models;
+listing webOS apps in the browser is not supported.
+
+Protocol reference: [pylgnetcast](https://github.com/wokar/pylgnetcast).
+
 ### Pairing prompt never appears
 
 - Look at the TV screen — most LG models show an on-screen approval
-- If you have an older model, the TV may show a numeric code (this app uses the newer prompt-based flow)
+- If you have an older NetCast model, enter its numeric code in the app
 - Try **Settings → General → Devices → TV Manager** on the TV and remove old paired devices
-- Delete `.tv-keys.json` in this project folder and pair again
+- Use **Settings → Forget saved TV key** for the selected or manually entered TV IP, then connect again
+
+The webOS registration uses a generic permissions manifest and waits for the TV's
+final `registered` response before reporting success. See the
+[LGTV Companion compatibility notes](https://github.com/JPersson77/LGTVCompanion/issues/351).
 
 ### Buttons don't respond
 

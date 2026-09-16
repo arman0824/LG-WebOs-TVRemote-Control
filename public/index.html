@@ -151,6 +151,16 @@
               <button class="ghost-btn" id="manualConnect" type="button">Connect</button>
             </div>
           </div>
+          <form id="pairingForm" class="field">
+            <h3>Have a code on your TV?</h3>
+            <label for="pairingCode">TV pairing code</label>
+            <p class="muted">Enter your TV's IP above, then its six-digit code here and press Pair TV.</p>
+            <div class="field-row">
+              <input id="pairingCode" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="6-digit code" autocomplete="off" required aria-label="TV pairing code">
+              <button class="ghost-btn" type="submit">Pair TV</button>
+            </div>
+          </form>
+          <p id="connectionError" class="muted" role="alert" hidden></p>
           <div class="divider"></div>
           <p class="eyebrow">Discovered</p>
           <div id="deviceList" class="device-list"></div>
@@ -193,7 +203,7 @@
         <div class="pairing-card">
           <div class="loader"></div>
           <h2>Pairing with your LG TV</h2>
-          <p class="muted">Accept the connection prompt on the TV screen.</p>
+          <p class="muted">Connecting… Your TV may show an approval prompt or a pairing code.</p>
         </div>
       </div>
 

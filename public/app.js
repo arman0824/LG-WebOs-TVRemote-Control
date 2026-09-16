@@ -29,6 +29,9 @@ function bindRefs() {
   el.manualConnect = $("#manualConnect");
   el.deviceList = $("#deviceList");
   el.scanHint = $("#scanHint");
+  el.pairingForm = $("#pairingForm");
+  el.pairingCode = $("#pairingCode");
+  el.connectionError = $("#connectionError");
 
   el.drawer = $("#drawer");
   el.drawerBackdrop = $("#drawerBackdrop");
@@ -99,6 +102,7 @@ function renderStatus() {
     el.tvMeta.textContent = "Tap menu to scan or connect";
     el.openAppsButton.hidden = true;
   }
+  el.serverInfo.textContent = state.device ? `Saved TV: ${state.device.name} (${state.device.host})` : "Select a TV or enter its IP in Connect to manage pairing.";
 }
 
 function renderDevices(devices) {
@@ -115,7 +119,7 @@ function renderDevices(devices) {
     card.innerHTML = `
       <strong>${escapeHtml(device.name || "LG webOS TV")}</strong>
       <span>${escapeHtml(device.host)}${device.model ? ` • ${escapeHtml(device.model)}` : ""}</span>
-      <span>${device.likelyLg ? "LG/webOS signal detected" : "Network TV candidate"}</span>
+      <span>${device.likelyLg ? "LG / Smart TV detected" : "Network TV candidate"}</span>
     `;
     card.addEventListener("click", () => connect(device));
     el.deviceList.appendChild(card);
@@ -172,6 +176,7 @@ function setDrawerTab(name) {
 /* APPS VIEW */
 function openAppsView() {
   if (!state.connected) { toast("Connect to a TV first."); return; }
+  if (state.device?.protocol === "netcast") { command("openApps"); return; }
   el.appsView.classList.add("is-open");
   el.appsView.setAttribute("aria-hidden", "false");
   if (!state.apps.length) loadApps();
@@ -232,17 +237,34 @@ async function scan() {
 }
 
 async function connect(device) {
+  if (state.busy) return;
   if (!device.host) {
     toast("Enter a TV IP address first.");
     return;
   }
   setBusy(true);
+  el.connectionError.hidden = true;
+  if (!device.pairingCode) {
+    state.pairingDevice = null;
+    el.pairingCode.value = "";
+  }
+  el.manualHost.value = device.host;
+  try { localStorage.setItem(KEYS.manualHost, device.host); } catch {}
   el.pairingOverlay.classList.remove("hidden");
   try {
     const result = await api("/api/connect", {
       method: "POST",
       body: JSON.stringify(device)
     });
+    if (result.pairingRequired) {
+      state.pairingDevice = result.device;
+      setDrawerTab("connect");
+      openDrawer();
+      el.pairingCode.focus();
+      return;
+    }
+    state.pairingDevice = null;
+    el.pairingCode.value = "";
     state.connected = true;
     state.device = result.device;
     state.apps = [];
@@ -251,6 +273,8 @@ async function connect(device) {
     closeDrawer();
   } catch (error) {
     toast(error.message);
+    el.connectionError.textContent = error.message;
+    el.connectionError.hidden = false;
   } finally {
     el.pairingOverlay.classList.add("hidden");
     setBusy(false);
@@ -302,15 +326,32 @@ function wireEvents() {
     connect({ host, name: "Manual LG TV", manufacturer: "LG" });
   });
   el.manualHost.addEventListener("keydown", (e) => { if (e.key === "Enter") el.manualConnect.click(); });
+  el.pairingForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const host = el.manualHost.value.trim();
+    if (!host) {
+      el.connectionError.textContent = "Enter your TV's IP address above before pairing.";
+      el.connectionError.hidden = false;
+      el.manualHost.focus();
+      return;
+    }
+    const device = state.pairingDevice?.host === host ? state.pairingDevice : { host, name: "LG TV", manufacturer: "LG" };
+    connect({ ...device, pairingCode: el.pairingCode.value.trim() });
+  });
 
   $$("#themeSeg .seg-btn").forEach((btn) => {
     btn.addEventListener("click", () => { state.theme = btn.dataset.themeOpt; applyTheme(); });
   });
 
-  el.clearKeyButton.addEventListener("click", () => {
-    try { localStorage.removeItem(KEYS.manualHost); } catch {}
-    el.manualHost.value = "";
-    toast("Saved host cleared. (Disk-stored keys are managed via the server.)");
+  el.clearKeyButton.addEventListener("click", async () => {
+    const host = el.manualHost.value.trim() || state.device?.host;
+    try {
+      await api("/api/forget", { method: "POST", body: JSON.stringify({ host }) });
+      state.pairingDevice = null;
+      el.pairingCode.value = "";
+      toast("Saved TV key removed. Connect again to pair.");
+      refreshStatus();
+    } catch (error) { toast(error.message); }
   });
 
   el.openAppsButton.addEventListener("click", openAppsView);
@@ -342,6 +383,7 @@ function wireEvents() {
   });
   // While channel buffer has digits, Enter tunes the channel
   document.addEventListener("keydown", (event) => {
+    if (event.target && (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA")) return;
     if (channelBuffer && (event.key === "Enter" || event.key === "buttonEnter")) {
       event.preventDefault();
       const ch = channelBuffer; channelBuffer = ""; updateChannelBuffer();
@@ -350,10 +392,16 @@ function wireEvents() {
   });
 
   $$("[data-command]").forEach((button) => {
-    button.addEventListener("click", () => command(button.dataset.command));
+    button.addEventListener("click", () => {
+      if (button.dataset.command === "buttonEnter" && channelBuffer) {
+        const ch = channelBuffer; channelBuffer = ""; updateChannelBuffer();
+        command("channel", { major: ch });
+      } else command(button.dataset.command);
+    });
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.defaultPrevented) return;
     if (event.target && (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA")) return;
     const map = {
       ArrowUp: "buttonUp", ArrowDown: "buttonDown",
