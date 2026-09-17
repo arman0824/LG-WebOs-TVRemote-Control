@@ -1,0 +1,5 @@
+#shareRemoteButton, [data-drawer-tab="share"], [data-drawer-panel="share"], .keyboard-note { display: none !important; }
+html { overscroll-behavior: none; }
+body { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+.drawer { padding-bottom: max(28px, env(safe-area-inset-bottom)); }

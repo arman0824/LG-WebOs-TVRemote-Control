@@ -1051,3 +1051,20 @@
                                                                                                                                                                                                                                                                                                                                                                                                                                                                       transition:none!important;
                                                                                                                                                                                                                                                                                                                                                                                                                                                                       scroll-behavior:auto!important}
                                                                                                                                                                                                                                                                                                                                                                                                                                                                     }
+
+/* The family link shares controls without requiring TV setup on each phone. */
+.header-actions { display: flex; align-items: center; gap: 14px; }
+.sharing-actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+#shareUrl { font-size: 11px; }
+.mode-pending [data-host-only], .family-mode [data-host-only] { display: none !important; }
+.family-mode .device-panel { grid-template-columns: 1fr; }
+.family-mode .device-panel > p { max-width: none; }
+@media (max-width: 730px) {
+  .header-actions { gap: 8px; }
+  .header-actions .header-connect { font-size: 10px; padding-left: 4px; }
+  .header-actions .header-connect svg { display: none; }
+}
+.fixed-link-setup { border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin: 20px 0; }
+.fixed-link-setup summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+.fixed-link-setup a { color: var(--ink); text-underline-offset: 3px; }
+#fixedLinkError { color: #b4483d; }

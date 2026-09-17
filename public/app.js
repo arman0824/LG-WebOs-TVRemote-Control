@@ -1,5 +1,6 @@
 const state = {
   connected: false,
+  shared: false,
   device: null,
   busy: false,
   theme: "light",
@@ -92,15 +93,51 @@ function renderStatus() {
   el.statusText.textContent = state.connected ? "Connected" : "Offline";
   if (state.connected && state.device) {
     el.tvName.textContent = state.device.name || "LG webOS TV";
-    const meta = [state.device.host];
+    const meta = [state.shared ? "Family remote · Ready to use" : state.device.host];
     if (state.device.model) meta.push(state.device.model);
     el.tvMeta.textContent = meta.join(" • ");
   } else {
     el.tvName.textContent = "No TV connected";
-    el.tvMeta.textContent = "Connect your LG TV to get started.";
+    el.tvMeta.textContent = state.shared ? "Ask the person using the MacBook to reconnect the TV." : "Connect your LG TV to get started.";
   }
   $("#connectLabel").textContent = state.connected ? "Manage TV" : "Connect TV";
   el.serverInfo.textContent = state.device ? `Saved TV: ${state.device.name} (${state.device.host})` : "Select a TV or enter its IP in Connect to manage pairing.";
+}
+
+function renderMode() {
+  document.body.classList.toggle("family-mode", state.shared);
+  document.body.classList.remove("mode-pending");
+  $$("[data-host-only]").forEach(node => {
+    if (!node.matches(".drawer-panel")) node.hidden = state.shared;
+  });
+  if (state.shared) setDrawerTab("settings");
+}
+
+function renderSharing(sharing) {
+  const active = sharing.active;
+  $("#shareLinkBox").hidden = !sharing.url;
+  $("#shareUrl").value = sharing.url || "";
+  $("#startSharingButton").hidden = active || !sharing.permanent;
+  $("#startSharingButton").disabled = sharing.starting;
+  $("#stopSharingButton").hidden = !active;
+  $("#shareLinkNote").textContent = sharing.permanent
+    ? "This address is saved. Stopping and restarting sharing uses the same link."
+    : sharing.url ? "This temporary link changes between sessions. Complete the setup below for a fixed family address." : "Your family will use the same address every time.";
+  if (sharing.permanent && !state.fixedLinkLoaded) {
+    state.fixedLinkLoaded = true;
+    $("#fixedShareUrl").value = sharing.url;
+    $("#ngrokToken").placeholder = "Saved — leave blank to keep it";
+    $("#fixedLinkSetup").open = false;
+  }
+  $("#sharingStatus").textContent = sharing.error || (active
+    ? "Sharing is on. Copy the link and send it to your family."
+    : sharing.starting ? "Starting your family link…" : sharing.permanent ? "Sharing is off. Your saved link will work again when you start sharing." : "Finish the one-time setup below to enable a permanent link.");
+}
+
+async function refreshSharing() {
+  if (state.shared) return;
+  try { renderSharing(await api("/api/share")); }
+  catch (error) { $("#sharingStatus").textContent = error.message; }
 }
 
 function renderDevices(devices) {
@@ -161,11 +198,12 @@ function closeDrawer() {
   el.drawer.classList.remove("is-open");
   el.drawer.inert = true;
   el.drawer.setAttribute("aria-hidden", "true");
-  el.menuButton.focus();
+  (state.shared ? $("#appearanceButton") : el.menuButton).focus();
   el.drawerBackdrop.classList.remove("is-visible");
   setTimeout(() => { if (!state.drawerOpen) el.drawerBackdrop.hidden = true; }, 260);
 }
 function setDrawerTab(name) {
+  if (state.shared && name !== "settings") name = "settings";
   state.drawerTab = name;
   el.drawerTabs.forEach((tab) => {
     tab.classList.toggle("is-active", tab.dataset.drawerTab === name);
@@ -174,11 +212,12 @@ function setDrawerTab(name) {
   el.drawerPanels.forEach((panel) => {
     panel.hidden = panel.dataset.drawerPanel !== name;
   });
+  if (name === "share") refreshSharing();
 }
 
 /* APPS VIEW */
 function openAppsView() {
-  if (!state.connected) { toast("Connect to a TV first."); return; }
+  if (!state.connected) { toast(state.shared ? "The TV is offline. Ask the person using the MacBook to reconnect it." : "Connect to a TV first."); return; }
   if (state.device?.protocol === "netcast") { command("openApps"); return; }
   el.appsView.classList.add("is-open");
   el.appsView.setAttribute("aria-hidden", "false");
@@ -218,6 +257,10 @@ async function refreshStatus() {
   try {
     const status = await api("/api/status");
     state.connected = !!status.connected;
+    if (typeof status.shared === "boolean" && status.shared !== state.shared) {
+      state.shared = status.shared;
+      renderMode();
+    }
     state.device = status.device || null;
     if (status.volume != null) state.volume = status.volume;
     if (typeof status.muted === "boolean") state.muted = status.muted;
@@ -298,8 +341,8 @@ function command(name, payload) {
 
 async function performCommand(name, payload) {
   if (!state.connected) {
-    toast("Connect to your TV first.");
-    setDrawerTab("connect"); openDrawer();
+    toast(state.shared ? "The TV is offline. Ask the person using the MacBook to reconnect it." : "Connect to your TV first.");
+    if (!state.shared) { setDrawerTab("connect"); openDrawer(); }
     return;
   }
   try {
@@ -332,6 +375,55 @@ async function launchApp(app) {
 
 /* EVENT WIRING */
 function wireEvents() {
+  $("#fixedLinkForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const button = $("#saveFixedLinkButton");
+    const errorText = $("#fixedLinkError");
+    button.disabled = true;
+    errorText.hidden = true;
+    $("#sharingStatus").textContent = "Saving and starting your fixed family link…";
+    try {
+      const result = await api("/api/share/config", { method: "POST", body: JSON.stringify({
+        url: $("#fixedShareUrl").value.trim(), authtoken: $("#ngrokToken").value.trim()
+      }) });
+      $("#ngrokToken").value = "";
+      state.fixedLinkLoaded = false;
+      renderSharing(result);
+      toast("Permanent family link is ready.");
+    } catch (error) {
+      $("#ngrokToken").value = "";
+      errorText.textContent = error.message;
+      errorText.hidden = false;
+      await refreshSharing();
+      $("#fixedLinkSetup").open = true;
+    } finally { button.disabled = false; }
+  });
+  $("#shareRemoteButton").addEventListener("click", () => { setDrawerTab("share"); openDrawer(); });
+  $("#startSharingButton").addEventListener("click", async () => {
+    renderSharing({ starting: true });
+    try { renderSharing(await api("/api/share", { method: "POST" })); }
+    catch (error) { renderSharing({ error: error.message }); }
+  });
+  $("#stopSharingButton").addEventListener("click", async () => {
+    $("#stopSharingButton").disabled = true;
+    try { renderSharing(await api("/api/share", { method: "DELETE" })); }
+    catch (error) { toast(error.message); }
+    finally { $("#stopSharingButton").disabled = false; }
+  });
+  $("#copyShareButton").addEventListener("click", async () => {
+    const field = $("#shareUrl");
+    try {
+      if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(field.value);
+      else {
+        field.focus(); field.select();
+        if (!document.execCommand("copy")) throw new Error("Copy unavailable");
+      }
+      toast("Link copied. Send it to your family.");
+    } catch {
+      field.focus(); field.select();
+      toast("Select and copy the link above.");
+    }
+  });
   el.menuButton.addEventListener("click", () => { setDrawerTab("connect"); openDrawer(); });
   el.drawerBackdrop.addEventListener("click", closeDrawer);
   $("#closeDrawerButton").addEventListener("click", closeDrawer);
@@ -430,14 +522,22 @@ function wireEvents() {
   });
 }
 
-function init() {
+async function init() {
   bindRefs();
   loadPreferences();
   applyTheme();
   wireEvents();
+  try { state.shared = (await api("/api/mode")).shared; }
+  catch { state.shared = /\.(?:trycloudflare\.com|ngrok-free\.app|ngrok-free\.dev|ngrok\.app|ngrok\.dev|ngrok\.io)$/.test(location.hostname); }
+  renderMode();
   setDrawerTab("connect");
   refreshStatus();
-  setInterval(refreshStatus, 5000);
+  setInterval(() => {
+    if (document.hidden) return;
+    refreshStatus();
+    if (state.drawerOpen && state.drawerTab === "share") refreshSharing();
+  }, state.shared ? 30000 : 5000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshStatus(); });
 }
 
 document.addEventListener("DOMContentLoaded", init);

@@ -1,11 +1,15 @@
 # Local LG TV Remote
 
-A local-only web remote for LG webOS and NetCast TVs. Scan your network, pair once, and control your TV from any browser — on your Mac or your phone. No cloud. No accounts. No npm dependencies.
+A web remote for LG webOS and NetCast TVs. Scan your network, pair once, and control your TV from a browser. Local control needs no accounts or npm dependencies. Optional family sharing uses a fixed ngrok address so phones on other networks can use the same paired TV.
 
 The remote has a charcoal body, raised keys, a circular navigation pad, separate
 volume and channel rockers, a full number pad, playback controls, and a Home key.
 The layout adapts to phones and desktops. Connection and pairing are available
 from **Connect TV**, including a permanently visible NetCast code field.
+
+An Android APK is also available in `outputs/LG-Remote-1.0.0.apk` after building.
+It talks directly to the TV over Wi-Fi and does not require the desktop server.
+See [Android installation and build instructions](android/README.md).
 
 ---
 
@@ -16,6 +20,7 @@ from **Connect TV**, including a permanently visible NetCast code field.
 - [Quick Start (3 minutes)](#quick-start-3-minutes)
 - [Run in the Background](#run-in-the-background)
 - [Use From Your Phone](#use-from-your-phone)
+- [Share With Family Anywhere](#share-with-family-anywhere)
 - [Connect to Your TV](#connect-to-your-tv)
 - [Using the Remote](#using-the-remote)
 - [Light & Dark Theme](#light--dark-theme)
@@ -35,6 +40,7 @@ from **Connect TV**, including a permanently visible NetCast code field.
 - **One-tap pairing** — accepts the on-screen approval prompt from your TV
 - **Saved pairing key** — reconnects instantly on subsequent launches
 - **Phone mode** — control the TV from any device on the same Wi-Fi
+- **Family link** — share the already-connected TV with phones on other Wi-Fi networks or mobile data, without visitor logins or pairing
 
 ### Remote
 - Power off, input selection, Live TV, captions, and TV settings
@@ -171,6 +177,45 @@ npm run status
 
 ---
 
+## Share With Family Anywhere
+
+1. Install ngrok on the host computer. On macOS:
+   ```sh
+   brew install --cask ngrok
+   ```
+2. Start the remote with `npm run start:phone` and connect your TV as usual.
+3. The owner signs in to a free [ngrok account](https://dashboard.ngrok.com/) once.
+   In **Share remote → Permanent link setup**, paste the HTTPS address from
+   [Domains](https://dashboard.ngrok.com/domains) and your
+   [authtoken](https://dashboard.ngrok.com/get-started/your-authtoken).
+   Click **Save & start fixed link**.
+4. Click **Copy link** and send it to your family. It opens the remote with no login,
+   app installation, or additional TV pairing.
+
+The host computer must stay on the TV's local network and have internet access.
+Keep the MacBook lid open. While sharing, the app prevents idle sleep; stopping
+sharing releases that sleep prevention. Closing the lid or shutting down can
+still interrupt sharing. The family phones only need internet access.
+
+**Stop sharing** closes the link without disconnecting the TV. Stopping the
+server also stops sharing. Click **Start sharing** to make the same saved address
+available again, including after restarting the server. The assigned address
+and authtoken stay in the local, ignored `.sharing-config.json` file; the authtoken
+is never sent to family browsers. A failed ngrok connection reports an error
+instead of replacing your saved address with a random URL.
+
+Ngrok's free plan may show a **Visit Site** notice before the remote opens. It
+also has monthly traffic limits (currently 20,000 HTTP requests and 1 GB of outgoing
+data). The remote reduces status polling on family phones and pauses polling
+in hidden tabs. See [ngrok's free-plan limits](https://ngrok.com/docs/pricing-limits/free-plan-limits).
+
+Anyone with the link can use the remote. Visitors use the host's existing TV
+session; setup, pairing, network scanning, and sharing management remain on the
+local page. Pairing keys stay on the host computer. If the TV is offline, the
+visitor sees a message to ask the person at the host computer to reconnect it.
+
+---
+
 ## Connect to Your TV
 
 You can connect in two ways.
@@ -295,6 +340,7 @@ These files are created in the project folder when you run the app:
 | File | Purpose |
 |---|---|
 | `.tv-keys.json` | Saved LG pairing keys per TV IP |
+| `.sharing-config.json` | Fixed ngrok domain and private owner authtoken (owner-only file permissions) |
 | `.server.pid` | Background server process id |
 | `.server.log` | Background server logs |
 
@@ -304,7 +350,7 @@ They are local-only and listed in `.gitignore` — do not commit them.
 
 ## Security
 
-This app is designed for **trusted local networks only**.
+The local setup page is designed for **trusted local networks**.
 
 `npm run start:phone` binds the server to `0.0.0.0`, which means **any device on the same Wi-Fi** can open the remote page while the server is running.
 
@@ -314,7 +360,11 @@ When you're done, stop the server:
 npm run stop
 ```
 
-**Do not** expose this app directly to the public internet — it has no authentication.
+The optional **Share remote** link intentionally has no login. Anyone who has
+the link can control the connected TV until you stop sharing. It exposes the
+remote page, connection status, and TV commands, while the local setup endpoints
+and pairing-key file are not available through the link. Do not forward the
+local server's port directly through your router; use the family sharing feature.
 
 ---
 

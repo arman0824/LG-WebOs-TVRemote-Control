@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en" data-theme="light">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f3f2ed"><title>LG Remote — At your fingertips</title><link rel="stylesheet" href="/styles.css"></head>
-<body>
+<body class="mode-pending">
 <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6 6a8 8 0 1 0 12 0"/></symbol><symbol id="i-input" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4M2 11h11m-3-3 3 3-3 3"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><path d="m9 3-1 3-3 1-2 4 2 2v4l4 3 3-1 3 1 4-3v-4l2-2-2-4-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="m9 5-6 6 6 6M3 11h12a6 6 0 0 1 6 6"/></symbol><symbol id="i-up" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="m14 7-5 5 5 5"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></symbol><symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 4 5 9H2v6h3l6 5ZM16 9l6 6m0-6-6 6"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8Z"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></symbol><symbol id="i-rewind" viewBox="0 0 24 24"><path d="m12 5-9 7 9 7Zm9 0-9 7 9 7Z"/></symbol><symbol id="i-forward" viewBox="0 0 24 24"><path d="m3 5 9 7-9 7Zm9 0 9 7-9 7Z"/></symbol><symbol id="i-apps" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r=".5"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.1M3 12h.1M3 18h.1"/></symbol><symbol id="i-exit" viewBox="0 0 24 24"><path d="M9 4H4v16h5M13 7l5 5-5 5M8 12h13"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-connect" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="3"/><path d="M8 21h8M12 17v4"/></symbol><symbol id="i-cc" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9H6v6h4m8-6h-4v6h4"/></symbol></svg>
-<header class="site-header"><a class="wordmark" href="/" aria-label="LG Remote home"><span class="brand-mark">L<span>G</span></span><span>remote<span class="wordmark-dot">.</span></span></a><span class="header-note">A little closer to your TV.</span><button class="header-connect" type="button" data-open-connect><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wifi"/></svg><span>Connect TV</span></button></header>
+<header class="site-header"><a class="wordmark" href="/" aria-label="LG Remote home"><span class="brand-mark">L<span>G</span></span><span>remote<span class="wordmark-dot">.</span></span></a><span class="header-note">A little closer to your TV.</span><div class="header-actions"><button class="header-connect" type="button" id="shareRemoteButton" data-host-only>Share remote ↗</button><button class="header-connect" type="button" data-open-connect data-host-only><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wifi"/></svg><span>Connect TV</span></button></div></header>
 <main class="stage" id="app">
   <section class="intro">
     <p class="eyebrow"><span class="tiny-dot"></span> YOUR SPACE. YOUR CONTROL.</p>
@@ -12,7 +12,7 @@
     <div class="device-panel">
       <div class="device-panel-top"><span class="device-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-connect"/></svg></span><div class="status-pill" id="statusPill"><span class="status-dot"></span><span id="statusText">Offline</span></div></div>
       <h2 id="tvName">No TV connected</h2><p id="tvMeta">Connect your LG TV to get started.</p>
-      <button id="menuButton" class="connect-action" type="button"><span id="connectLabel">Connect your TV</span><span aria-hidden="true">↗</span></button>
+      <button id="menuButton" data-host-only class="connect-action" type="button"><span id="connectLabel">Connect your TV</span><span aria-hidden="true">↗</span></button>
     </div>
     <div class="keyboard-note"><p class="eyebrow">MAKE YOURSELF AT HOME</p><p>Use your keyboard, too.</p><div><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd><span>Navigate</span><kbd>↵</kbd><span>Select</span></div></div>
     <p class="local-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wifi"/></svg> On your network. In your control.</p>
@@ -46,10 +46,11 @@
       <aside class="drawer" id="drawer" aria-hidden="true" inert>
         <div class="panel-top"><span class="eyebrow">REMOTE / SETUP</span><button id="closeDrawerButton" class="close-button" type="button" aria-label="Close connection settings">×</button></div>
         <nav class="drawer-tabs" role="tablist">
-          <button class="drawer-tab is-active" data-drawer-tab="connect" type="button" role="tab">Connect</button>
+          <button class="drawer-tab is-active" data-drawer-tab="connect" data-host-only type="button" role="tab">Connect</button>
+          <button class="drawer-tab" data-drawer-tab="share" data-host-only type="button" role="tab">Share</button>
           <button class="drawer-tab" data-drawer-tab="settings" type="button" role="tab">Settings</button>
         </nav>
-        <section class="drawer-panel" data-drawer-panel="connect" role="tabpanel">
+        <section class="drawer-panel" data-drawer-panel="connect" data-host-only role="tabpanel">
           <p class="eyebrow">Network</p>
           <h2>Find your TV</h2>
           <p class="muted">Scan the local network or enter an IP address.</p>
@@ -79,6 +80,39 @@
           <div id="deviceList" class="device-list"></div>
           <p class="muted" id="scanHint">Press scan with your TV turned on.</p>
         </section>
+        <section class="drawer-panel" data-drawer-panel="share" data-host-only role="tabpanel" hidden>
+          <p class="eyebrow">For your family</p>
+          <h2>Share your remote</h2>
+          <p class="muted">Send the link. They open it and use the TV you're already connected to. No login, app install, or pairing needed.</p>
+          <p class="muted" id="sharingStatus" role="status">Sharing is off.</p>
+          <button class="primary-btn" id="startSharingButton" type="button">Start sharing</button>
+          <div id="shareLinkBox" class="field" hidden>
+            <label for="shareUrl">Your family link</label>
+            <input id="shareUrl" type="url" readonly autocomplete="off" aria-label="Family remote link">
+            <div class="sharing-actions">
+              <button class="primary-btn" id="copyShareButton" type="button">Copy link</button>
+              <button class="ghost-btn" id="stopSharingButton" type="button">Stop sharing</button>
+            </div>
+          </div>
+          <p class="muted" id="shareLinkNote">Set up your fixed ngrok address below to use the same family link every time.</p>
+          <details id="fixedLinkSetup" class="fixed-link-setup" open>
+            <summary>Permanent link setup</summary>
+            <form id="fixedLinkForm" class="field">
+              <p class="muted">One-time setup for the MacBook owner. Your family does not need an account.</p>
+              <label for="fixedShareUrl">Your assigned ngrok address</label>
+              <input id="fixedShareUrl" type="url" placeholder="https://your-address.ngrok-free.app" required autocomplete="off">
+              <p class="muted"><a href="https://dashboard.ngrok.com/domains" target="_blank" rel="noreferrer">Find your domain ↗</a></p>
+              <label for="ngrokToken">Ngrok authtoken</label>
+              <input id="ngrokToken" type="password" placeholder="Paste your authtoken" autocomplete="off" spellcheck="false">
+              <p class="muted"><a href="https://dashboard.ngrok.com/get-started/your-authtoken" target="_blank" rel="noreferrer">Find your authtoken ↗</a>. It is saved only on this MacBook.</p>
+              <button class="primary-btn" id="saveFixedLinkButton" type="submit">Save & start fixed link</button>
+              <p class="muted" id="fixedLinkError" role="alert" hidden></p>
+              <p class="muted">Ngrok's free plan has usage limits and may show a “Visit Site” notice. Your assigned address stays the same.</p>
+            </form>
+          </details>
+          <p class="muted">Keep this MacBook on, its lid open, and on the TV's Wi-Fi. We'll keep it awake while sharing.</p>
+          <p class="muted">Anyone with this link can control the TV.</p>
+        </section>
         <section class="drawer-panel" data-drawer-panel="settings" role="tabpanel" hidden>
           <p class="eyebrow">Appearance</p>
           <h2>Theme</h2>
@@ -86,11 +120,13 @@
             <button class="seg-btn is-active" data-theme-opt="light" type="button" role="radio" aria-checked="true">Light</button>
             <button class="seg-btn" data-theme-opt="dark" type="button" role="radio" aria-checked="false">Dark</button>
           </div>
+          <div data-host-only>
           <div class="divider"></div>
           <p class="eyebrow">Connection</p>
           <h2>Pairing</h2>
           <p class="muted" id="serverInfo">Loading server info…</p>
           <button class="ghost-btn ghost-btn--block" id="clearKeyButton" type="button">Forget saved TV key</button>
+          </div>
         </section>
       </aside>
 

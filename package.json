@@ -1,7 +1,7 @@
 {
   "name": "local-lg-tv-remote",
   "version": "1.0.0",
-  "description": "A local-only LG webOS TV scanner, pairing bridge, and remote control website.",
+  "description": "An LG webOS and NetCast remote with local pairing and optional family link sharing.",
   "main": "server.js",
   "scripts": {
     "test": "node --test",
@@ -9,7 +9,11 @@
     "start:bg": "node scripts/server-manager.js start",
     "start:phone": "node scripts/server-manager.js start --host=0.0.0.0",
     "stop": "node scripts/server-manager.js stop",
-    "status": "node scripts/server-manager.js status"
+    "status": "node scripts/server-manager.js status",
+    "android:prepare": "node scripts/prepare-android.js",
+    "android:apk": "node scripts/build-android-sdk.js",
+    "android:signing": "node scripts/android-signing.js",
+    "android:build": "node scripts/prepare-android.js && node scripts/android-signing.js && cd android && ./gradlew assembleRelease"
   },
   "keywords": [
     "lg",

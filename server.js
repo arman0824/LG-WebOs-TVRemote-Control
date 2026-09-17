@@ -8,6 +8,7 @@ const path = require("path");
 const tls = require("tls");
 const { URL } = require("url");
 const { NetcastClient } = require("./netcast");
+const { RemoteSharing, createFamilyHandler } = require("./sharing");
 
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || "127.0.0.1";
@@ -650,14 +651,27 @@ async function connectToDevice(device, pairingCode = "") {
   };
 }
 
-async function handleApi(req, res, pathname) {
+async function handleApi(req, res, pathname, shared = false) {
   try {
+    if (req.method === "GET" && pathname === "/api/mode") {
+      return sendJson(res, 200, { shared });
+    }
+    if (!shared && pathname === "/api/share") {
+      if (req.method === "GET") return sendJson(res, 200, sharing.status());
+      if (req.method === "POST") return sendJson(res, 200, await sharing.start());
+      if (req.method === "DELETE") return sendJson(res, 200, sharing.stop());
+    }
+    if (!shared && pathname === "/api/share/config" && req.method === "POST") {
+      sharing.configure(await readBody(req));
+      return sendJson(res, 200, await sharing.start());
+    }
     if (req.method === "GET" && pathname === "/api/status") {
       if (activeClient?.protocol === "netcast") await activeClient.checkStatus();
       return sendJson(res, 200, {
         connected: Boolean(activeClient && !activeClient.closed),
-        device: activeDevice,
-        localInterfaces: localInterfaces()
+        device: shared && activeDevice ? { name: activeDevice.name, model: activeDevice.model, protocol: activeDevice.protocol } : activeDevice,
+        shared,
+        ...(shared ? {} : { localInterfaces: localInterfaces() })
       });
     }
 
@@ -708,7 +722,7 @@ async function handleApi(req, res, pathname) {
     }
 
     if (req.method === "POST" && pathname === "/api/command") {
-      if (!activeClient || activeClient.closed) throw new Error("Connect to a TV first.");
+      if (!activeClient || activeClient.closed) throw new Error(shared ? "The TV is offline. Ask the person using the MacBook to reconnect it." : "Connect to a TV first.");
       const body = await readBody(req);
       if (activeClient.protocol === "netcast") return sendJson(res, 200, await activeClient.command(body.command, body.payload));
       if (body.command === "digit") {
@@ -754,6 +768,10 @@ function serveStatic(req, res, pathname) {
   });
 }
 
+const sharing = new RemoteSharing(createFamilyHandler({ handleApi, serveStatic, sendJson }), {
+  configFile: path.join(ROOT, ".sharing-config.json")
+});
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || `${HOST}:${PORT}`}`);
   if (url.pathname.startsWith("/api/")) {
@@ -763,9 +781,20 @@ const server = http.createServer((req, res) => {
   serveStatic(req, res, url.pathname);
 });
 
-if (require.main === module) server.listen(PORT, HOST, () => {
+if (require.main === module) {
+  const shutdown = () => {
+    sharing.stop();
+    activeInputSocket?.close();
+    activeClient?.close();
+    server.closeAllConnections();
+    server.close(() => process.exit(0));
+  };
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
+  server.listen(PORT, HOST, () => {
   console.log(`Local LG TV Remote is running at http://${HOST}:${PORT}`);
   console.log("Keep your LG TV powered on and on the same Wi-Fi/network as this Mac.");
 });
+}
 
 module.exports = { TinyWebSocket, WebOsClient, encodeFrame, decodeFrame, server, COMMANDS };
