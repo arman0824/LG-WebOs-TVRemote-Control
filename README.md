@@ -7,8 +7,9 @@ volume and channel rockers, a full number pad, playback controls, and a Home key
 The layout adapts to phones and desktops. Connection and pairing are available
 from **Connect TV**, including a permanently visible NetCast code field.
 
-An Android APK is also available in `outputs/LG-Remote-1.0.0.apk` after building.
-It talks directly to the TV over Wi-Fi and does not require the desktop server.
+An Android APK is also available in `outputs/LG-Remote-1.0.2.apk` after building.
+It talks directly to the TV over local Wi-Fi or a phone hotspot, including a
+hotspot hosted by the app’s own phone, and does not require the desktop server.
 See [Android installation and build instructions](android/README.md).
 
 ---

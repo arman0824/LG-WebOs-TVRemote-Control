@@ -31,8 +31,8 @@ final class TvController {
     }
     static String message(Throwable error) {
         String message = error.getMessage();
-        if (message == null || message.isEmpty()) return "Could not reach the TV. Check its power and Wi-Fi connection.";
-        if (error instanceof java.net.SocketTimeoutException || error instanceof java.net.ConnectException) return "Cannot reach the TV. Check the TV IP and connect your phone to the same Wi-Fi.";
+        if (message == null || message.isEmpty()) return "Could not reach the TV. Check its power and Wi-Fi or hotspot connection.";
+        if (error instanceof java.net.SocketTimeoutException || error instanceof java.net.ConnectException) return "Cannot reach the TV. Check the TV IP. Connect the TV to your phone's hotspot, or connect both devices to the same Wi-Fi or hotspot.";
         return message;
     }
     static boolean isLocalHost(String host) {
@@ -81,14 +81,14 @@ final class TvController {
     }
     private JSONObject connect(JSONObject requested, boolean restoring) throws Exception {
         String host = host(requested);
-        Discovery.bindWifi(context);
+        okhttp3.OkHttpClient networkClient = LocalNetwork.client(context, host);
         JSONObject saved = store.get(host);
         String code = requested.optString("pairingCode").trim();
         String protocol = "", key = "", pin = "";
         TvClient next = null;
         JSONObject selected = json("host", host, "name", requested.optString("name", "LG TV"), "model", requested.optString("model"), "manufacturer", "LG");
         try {
-            NetcastClient legacy = new NetcastClient(host, maps.getJSONObject("netcast"));
+            NetcastClient legacy = new NetcastClient("http://" + host + ":8080/roap/api/", maps.getJSONObject("netcast"), networkClient);
             boolean netcast = !code.isEmpty() || saved.optString("protocol").equals("netcast") || legacy.detect();
             if (netcast) {
                 next = legacy;
@@ -110,7 +110,7 @@ final class TvController {
                 key = saved.optString("protocol").equals("webos") ? saved.optString("key") : "";
                 // Avoid unexpected approval popups on launch; webOS reconnect is one tap.
                 if (restoring) return json("ok", true, "connected", false);
-                WebOsClient webos = new WebOsClient(host, key, saved.optString("pin"), maps.getJSONObject("webos"));
+                WebOsClient webos = new WebOsClient(host, key, saved.optString("pin"), maps.getJSONObject("webos"), networkClient);
                 next = webos;
                 webos.connect();
                 webos.pair();

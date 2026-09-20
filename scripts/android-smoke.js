@@ -30,7 +30,7 @@ const props = Object.fromEntries(fs.readFileSync(path.join(root, 'android/signin
 const apk = path.join(test, 'smoke.apk');
 run(path.join(bt, 'apksigner'), ['sign', '--ks', path.join(root, 'android', props.storeFile), '--ks-key-alias', props.keyAlias, '--ks-pass', 'env:LG_APK_STORE_PASS', '--key-pass', 'env:LG_APK_KEY_PASS', '--out', apk, aligned], { env: { ...process.env, LG_APK_STORE_PASS: props.storePassword, LG_APK_KEY_PASS: props.keyPassword } });
 const adb = path.join(sdk, 'platform-tools/adb');
-run(adb, ['-s', serial, 'install', '-r', 'outputs/LG-Remote-1.0.0.apk']);
+run(adb, ['-s', serial, 'install', '-r', 'outputs/LG-Remote-1.0.2.apk']);
 run(adb, ['-s', serial, 'install', '-r', apk]);
 const result = run(adb, ['-s', serial, 'shell', 'am', 'instrument', '-w', 'com.arman.lgremote.smoketest/com.arman.lgremote.SmokeInstrumentation'], { encoding: 'utf8', stdio: 'pipe' });
 console.log(result.stdout);

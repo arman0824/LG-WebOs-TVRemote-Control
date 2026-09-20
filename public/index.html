@@ -3,22 +3,16 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f3f2ed"><title>LG Remote — At your fingertips</title><link rel="stylesheet" href="/styles.css"></head>
 <body class="mode-pending">
 <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6 6a8 8 0 1 0 12 0"/></symbol><symbol id="i-input" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4M2 11h11m-3-3 3 3-3 3"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><path d="m9 3-1 3-3 1-2 4 2 2v4l4 3 3-1 3 1 4-3v-4l2-2-2-4-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="m9 5-6 6 6 6M3 11h12a6 6 0 0 1 6 6"/></symbol><symbol id="i-up" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="m14 7-5 5 5 5"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></symbol><symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 4 5 9H2v6h3l6 5ZM16 9l6 6m0-6-6 6"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8Z"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></symbol><symbol id="i-rewind" viewBox="0 0 24 24"><path d="m12 5-9 7 9 7Zm9 0-9 7 9 7Z"/></symbol><symbol id="i-forward" viewBox="0 0 24 24"><path d="m3 5 9 7-9 7Zm9 0 9 7-9 7Z"/></symbol><symbol id="i-apps" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r=".5"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.1M3 12h.1M3 18h.1"/></symbol><symbol id="i-exit" viewBox="0 0 24 24"><path d="M9 4H4v16h5M13 7l5 5-5 5M8 12h13"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-connect" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="3"/><path d="M8 21h8M12 17v4"/></symbol><symbol id="i-cc" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9H6v6h4m8-6h-4v6h4"/></symbol></svg>
-<header class="site-header"><a class="wordmark" href="/" aria-label="LG Remote home"><span class="brand-mark">L<span>G</span></span><span>remote<span class="wordmark-dot">.</span></span></a><span class="header-note">A little closer to your TV.</span><div class="header-actions"><button class="header-connect" type="button" id="shareRemoteButton" data-host-only>Share remote ↗</button><button class="header-connect" type="button" data-open-connect data-host-only><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wifi"/></svg><span>Connect TV</span></button></div></header>
+<header class="site-header"><a class="wordmark" href="/" aria-label="LG Remote home"><span class="brand-mark">L<span>G</span></span><span>remote<span class="wordmark-dot">.</span></span></a><div class="header-actions"><button class="header-connect" type="button" id="shareRemoteButton" data-host-only>Share remote ↗</button><button class="header-connect" type="button" data-open-connect data-host-only><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wifi"/></svg><span>Connect TV</span></button></div></header>
 <main class="stage" id="app">
   <section class="intro">
-    <p class="eyebrow"><span class="tiny-dot"></span> YOUR SPACE. YOUR CONTROL.</p>
-    <h1>Your TV.<br><em>In good hands.</em></h1>
-    <p class="intro-copy">All the familiar buttons, right where you need them. Settle in and make yourself comfortable.</p>
     <div class="device-panel">
       <div class="device-panel-top"><span class="device-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-connect"/></svg></span><div class="status-pill" id="statusPill"><span class="status-dot"></span><span id="statusText">Offline</span></div></div>
       <h2 id="tvName">No TV connected</h2><p id="tvMeta">Connect your LG TV to get started.</p>
       <button id="menuButton" data-host-only class="connect-action" type="button"><span id="connectLabel">Connect your TV</span><span aria-hidden="true">↗</span></button>
     </div>
-    <div class="keyboard-note"><p class="eyebrow">MAKE YOURSELF AT HOME</p><p>Use your keyboard, too.</p><div><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd><span>Navigate</span><kbd>↵</kbd><span>Select</span></div></div>
-    <p class="local-note"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wifi"/></svg> On your network. In your control.</p>
   </section>
   <section class="remote-area" aria-label="TV remote">
-    <div class="remote-caption"><span>THE EVERYDAY REMOTE</span><span>01 / LG</span></div>
     <div class="remote" role="group" aria-label="LG TV remote control">
       <div class="remote-top"><span class="remote-wordmark">LG <span>REMOTE</span></span><span class="signal-led" id="signalLed" aria-label="Command activity"></span></div>
       <div class="power-row"><button type="button" class="remote-key power-key" aria-label="Power off" title="Power off" data-command="powerOff" id="powerButton" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-power"/></svg><span>Power</span></button><span class="power-note">SMART TV<br><span>UNIVERSAL CONTROL</span></span><button type="button" class="remote-key " aria-label="Input" title="Input" data-command="input" ><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-input"/></svg><span>Input</span></button></div>
@@ -39,7 +33,6 @@
       <details class="more-controls"><summary>More controls <span>+</span></summary><div class="key-grid"><button type="button" class="remote-key " aria-label="Teletext" title="Teletext" data-command="teletext" ><span>Teletext</span></button><button type="button" class="remote-key " aria-label="Text options" title="Text options" data-command="textOption" ><span>Text options</span></button><button type="button" class="remote-key " aria-label="Audio desc." title="Audio desc." data-command="audioDescription" ><span>Audio desc.</span></button><button type="button" class="remote-key " aria-label="Aspect ratio" title="Aspect ratio" data-command="aspectRatio" ><span>Aspect ratio</span></button><button type="button" class="remote-key record-key" aria-label="Record" title="Record" data-command="record" ><span>Record</span></button><button type="button" class="remote-key " aria-label="Recordings" title="Recordings" data-command="recordings" ><span>Recordings</span></button></div></details>
       <div class="remote-footer"><span>LG SMART TV</span><span class="grip" aria-hidden="true"></span></div>
     </div>
-    <p class="remote-footnote">Familiar by design. Connected by Wi-Fi.</p>
   </section>
       <!-- DRAWER -->
       <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
@@ -53,7 +46,7 @@
         <section class="drawer-panel" data-drawer-panel="connect" data-host-only role="tabpanel">
           <p class="eyebrow">Network</p>
           <h2>Find your TV</h2>
-          <p class="muted">Scan the local network or enter an IP address.</p>
+          <p class="muted" id="networkHelp">Scan the local network or enter an IP address.</p>
           <button class="primary-btn" id="scanButton" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3"/></svg>
             <span>Scan network</span>
@@ -159,6 +152,6 @@
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 </main>
-<footer class="site-footer"><span>MADE FOR YOUR LIVING ROOM</span><span>webOS & NetCast compatible</span><button type="button" id="appearanceButton">Appearance ↗</button></footer>
+<footer class="site-footer"><button type="button" id="appearanceButton">Appearance ↗</button></footer>
 <script src="/app.js"></script>
 </body></html>

@@ -1068,3 +1068,68 @@
 .fixed-link-setup summary { cursor: pointer; font-size: 13px; font-weight: 600; }
 .fixed-link-setup a { color: var(--ink); text-underline-offset: 3px; }
 #fixedLinkError { color: #b4483d; }
+
+/* One centered remote layout at every screen size. */
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 440px;
+  padding: 28px 20px 32px;
+}
+.intro {
+  position: static;
+  padding: 0;
+  width: min(336px, 100%);
+}
+.device-panel {
+  max-width: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 12px;
+  padding: 15px 16px;
+  border-radius: 12px;
+}
+.device-panel-top {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+}
+.device-icon { display: none; }
+.device-panel h2 {
+  grid-column: 1;
+  margin: 0;
+  font-size: 14px;
+  align-self: center;
+}
+.device-panel > p {
+  grid-column: 1;
+  max-width: 190px;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.connect-action {
+  grid-column: 2;
+  grid-row: 2 / 4;
+  width: 76px;
+  padding: 11px 8px;
+  justify-content: center;
+  align-self: center;
+  margin: 0;
+  font-size: 10px;
+}
+.connect-action > span:last-child { display: none; }
+.remote-area, .remote { width: 336px; max-width: 100%; }
+.site-footer {
+  max-width: 336px;
+  margin: 0 auto;
+  padding: 16px 0 24px;
+  justify-content: center;
+  border: 0;
+}
+@media (max-width: 380px) {
+  .stage { padding: 20px 16px 28px; gap: 20px; }
+  .site-header { padding: 14px 16px; }
+}

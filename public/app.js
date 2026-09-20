@@ -143,7 +143,7 @@ async function refreshSharing() {
 function renderDevices(devices) {
   el.deviceList.innerHTML = "";
   if (!devices.length) {
-    el.scanHint.textContent = "No TVs found yet. You can still connect with an IP address.";
+    el.scanHint.textContent = "No TVs found yet. Enter the TV IP from its network settings. On a hotspot, check that local device connections are allowed.";
     return;
   }
   el.scanHint.textContent = `${devices.length} device${devices.length === 1 ? "" : "s"} found.`;

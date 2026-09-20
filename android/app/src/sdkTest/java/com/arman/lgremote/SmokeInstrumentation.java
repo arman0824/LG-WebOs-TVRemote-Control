@@ -37,7 +37,8 @@ public final class SmokeInstrumentation extends Instrumentation {
             end = System.nanoTime() + TimeUnit.SECONDS.toNanos(8);
             while (System.nanoTime() < end && !"true".equals(js("!document.querySelector('#connectionError').hidden"))) Thread.sleep(100);
             require("true".equals(js("document.querySelector('#connectionError').textContent.includes('IPv4')")), "Native validation response did not reach the UI");
-            require(Discovery.wifiNetwork(getTargetContext()) != null, "Test device must have Wi-Fi enabled");
+            require(!LocalNetwork.routes(getTargetContext()).isEmpty(), "Test device must have a local network interface");
+            require("true".equals(js("document.querySelector('#networkHelp').textContent.includes('hotspot')")), "Hotspot instructions missing");
             Discovery.scan(getTargetContext());
             PairingStore saved = new PairingStore(getTargetContext());
             saved.save("192.168.254.254", TvController.json("key", "123456", "protocol", "netcast"));
@@ -47,7 +48,7 @@ public final class SmokeInstrumentation extends Instrumentation {
             saved.forget("192.168.254.254");
             require(!saved.get("192.168.254.254").has("key"), "Forget pairing failed");
             js("document.querySelector('#manualHost').value=''; localStorage.removeItem(KEYS.manualHost); closeDrawer()");
-            results.putString("result", "PASS: bundled UI, native bridge, input validation, responsive layout, Wi-Fi discovery, encrypted pairing persistence and forget");
+            results.putString("result", "PASS: bundled UI, native bridge, input validation, responsive layout, local interface discovery, hotspot instructions, encrypted pairing persistence and forget");
             finish(Activity.RESULT_OK, results);
         } catch (Throwable error) {
             results.putString("result", "FAIL: " + error);

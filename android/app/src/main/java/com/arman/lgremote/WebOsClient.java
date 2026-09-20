@@ -20,7 +20,7 @@ final class WebOsClient implements TvClient {
     private Socket main;
     private Socket input;
 
-    WebOsClient(String host, String key, String savedPin, JSONObject commands) throws Exception {
+    WebOsClient(String host, String key, String savedPin, JSONObject commands, OkHttpClient client) throws Exception {
         this.host = host;
         this.key = key;
         this.commands = commands;
@@ -47,7 +47,7 @@ final class WebOsClient implements TvClient {
         };
         SSLContext ssl = SSLContext.getInstance("TLS");
         ssl.init(null, new TrustManager[] { trust }, null);
-        http = new OkHttpClient.Builder().connectTimeout(4, TimeUnit.SECONDS).readTimeout(0, TimeUnit.MILLISECONDS)
+        http = client.newBuilder().connectTimeout(4, TimeUnit.SECONDS).readTimeout(0, TimeUnit.MILLISECONDS)
             .pingInterval(15, TimeUnit.SECONDS).followRedirects(false)
             .sslSocketFactory(ssl.getSocketFactory(), trust).hostnameVerifier((hostname, session) -> hostname.equals(host)).build();
     }
@@ -65,7 +65,7 @@ final class WebOsClient implements TvClient {
         Socket connection = new Socket();
         connection.socket = http.newWebSocket(new Request.Builder().url(url).build(), connection);
         try { connection.opened.get(6, TimeUnit.SECONDS); return connection; }
-        catch (Exception error) { connection.close(); throw new IOException("Cannot reach the TV. Check its IP, power and Wi-Fi.", error); }
+        catch (Exception error) { connection.close(); throw new IOException("Cannot reach the TV. Check its IP, power and Wi-Fi or hotspot connection.", error); }
     }
     void pair() throws Exception {
         JSONArray permissions = new JSONArray(new String[] {

@@ -39,7 +39,7 @@ const unsigned = path.join(build, 'unsigned.apk');
 const manifest = path.join(build, 'AndroidManifest.xml');
 fs.writeFileSync(manifest, fs.readFileSync(path.join(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8').replace('<manifest ', '<manifest package="com.arman.lgremote" '));
 run(path.join(bt, 'aapt2'), ['link', '-o', unsigned, '-I', androidJar, '--manifest', manifest,
-  '--min-sdk-version', '26', '--target-sdk-version', '36', '--version-code', '1', '--version-name', '1.0.0',
+  '--min-sdk-version', '26', '--target-sdk-version', '36', '--version-code', '3', '--version-name', '1.0.2',
   '--java', path.join(build, 'generated'), '-A', 'android/app/src/main/assets', path.join(build, 'resources.zip')]);
 const source = path.join(root, 'android/app/src/main/java/com/arman/lgremote');
 const sources = fs.readdirSync(source).filter(name => name.endsWith('.java')).map(name => path.join(source, name));
@@ -54,7 +54,7 @@ run(path.join(bt, 'zipalign'), ['-f', '-p', '4', unsigned, aligned]);
 const props = Object.fromEntries(fs.readFileSync(path.join(root, 'android/signing.properties'), 'utf8').trim().split('\n').map(line => {
   const index = line.indexOf('='); return [line.slice(0, index), line.slice(index + 1)];
 }));
-const output = path.join(root, 'outputs/LG-Remote-1.0.0.apk');
+const output = path.join(root, 'outputs/LG-Remote-1.0.2.apk');
 fs.mkdirSync(path.dirname(output), { recursive: true });
 run(path.join(bt, 'apksigner'), ['sign', '--ks', path.join(root, 'android', props.storeFile), '--ks-key-alias', props.keyAlias,
   '--ks-pass', 'env:LG_APK_STORE_PASS', '--key-pass', 'env:LG_APK_KEY_PASS', '--out', output, aligned], {
