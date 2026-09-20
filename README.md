@@ -1,374 +1,222 @@
 # Local LG TV Remote
 
-A web remote for LG webOS and NetCast TVs. Scan your network, pair once, and control your TV from a browser. Local control needs no accounts or npm dependencies. Optional family sharing uses a fixed ngrok address so phones on other networks can use the same paired TV.
+Lost the remote? Use your Android phone or a browser to control your LG TV.
+Scan for your TV, pair it once, and use familiar buttons for volume, channels,
+Home, apps and playback.
 
-The remote has a charcoal body, raised keys, a circular navigation pad, separate
-volume and channel rockers, a full number pad, playback controls, and a Home key.
-The layout adapts to phones and desktops. Connection and pairing are available
-from **Connect TV**, including a permanently visible NetCast code field.
+<p align="center">
+  <img src="docs/assets/remote-demo.gif" alt="The app's remote interface, with an animated illustration of the Android-to-TV and browser-through-laptop connections." width="100%">
+</p>
 
-An Android APK is also available in `outputs/LG-Remote-1.0.2.apk` after building.
-It talks directly to the TV over local Wi-Fi or a phone hotspot, including a
-hotspot hosted by the app’s own phone, and does not require the desktop server.
-See [Android installation and build instructions](android/README.md).
+<p align="center">
+  <a href="https://github.com/arman0824/LG-WebOs-TVRemote-Control/releases/latest/download/LG-Remote-1.0.2.apk"><strong>Download Android app</strong></a>
+  &nbsp; · &nbsp;
+  <a href="#use-a-laptop">Laptop setup</a>
+  &nbsp; · &nbsp;
+  <a href="#how-it-works">How it works</a>
+  &nbsp; · &nbsp;
+  <a href="docs/assets/remote-preview.png">Still image</a>
+</p>
 
----
+## Choose how to use it
 
-## Table of Contents
-
-- [Features](#features)
-- [Requirements](#requirements)
-- [Quick Start (3 minutes)](#quick-start-3-minutes)
-- [Run in the Background](#run-in-the-background)
-- [Use From Your Phone](#use-from-your-phone)
-- [Share With Family Anywhere](#share-with-family-anywhere)
-- [Connect to Your TV](#connect-to-your-tv)
-- [Using the Remote](#using-the-remote)
-- [Light & Dark Theme](#light--dark-theme)
-- [How It Works](#how-it-works)
-- [Troubleshooting](#troubleshooting)
-- [Local Files](#local-files)
-- [Security](#security)
-- [License](#license)
-
----
-
-## Features
-
-### Connectivity
-- **Automatic scan** — discovers LG webOS TVs on your local network via SSDP
-- **Manual IP** — connect by entering your TV's IP address if scanning fails
-- **One-tap pairing** — accepts the on-screen approval prompt from your TV
-- **Saved pairing key** — reconnects instantly on subsequent launches
-- **Phone mode** — control the TV from any device on the same Wi-Fi
-- **Family link** — share the already-connected TV with phones on other Wi-Fi networks or mobile data, without visitor logins or pairing
-
-### Remote
-- Power off, input selection, Live TV, captions, and TV settings
-- Number keys (0–9), channel list, and previous channel
-- Volume and channel rockers, mute toggle, Guide, and Info
-- Circular D-pad, OK, Home, Apps, Back, and Exit
-- Play, pause, stop, rewind, and fast-forward
-- Four color function keys
-- **More controls**: teletext, text options, audio description, aspect ratio, record, and recordings
-- Keyboard: arrows, Enter, Escape, digits, `M` for mute, `+` / `-` for volume
-
-### Design
-- Charcoal physical-style remote with raised keys and button feedback
-- Responsive desktop layout and a focused mobile view
-- Light and dark page themes under **Appearance**
-- Connection drawer with manual IP, network scan, and six-digit pairing
-
-Buttons are mapped for webOS and NetCast. Availability of features such as
-recording, teletext, captions, and programme information depends on the TV and
-current input. The power button turns the TV off; network wake is not implemented.
-
----
-
-## Requirements
-
-| What you need | Notes |
+| Option | What you need |
 |---|---|
-| A computer running **macOS, Linux, or Windows** | The server runs here |
-| **Node.js 18 or newer** | [nodejs.org](https://nodejs.org) |
-| An **LG Smart TV running webOS or NetCast with ROAP** | webOS uses an approval prompt; NetCast uses a six-digit code |
-| **Same local network** | Your computer and TV must be on the same Wi-Fi or LAN |
-| For phone control | Your phone must also be on the same Wi-Fi |
+| **Android app** | An Android 8.0+ phone and your LG TV. No laptop needed. |
+| **Browser remote** | A Windows, Mac or Linux laptop running the server. Open the remote on that laptop or on a phone, including an iPhone. |
 
-No `npm install` step — the project is dependency-free. Works on macOS, Linux, and Windows out of the box.
+Works with LG **webOS** TVs and older **NetCast** TVs that support network remote
+control. Your TV needs to be powered on. Some buttons depend on the model;
+the power button can turn the TV **off**, but cannot wake it up.
 
----
+## Use the Android app
 
-## Quick Start (3 minutes)
+1. On your phone, [download LG Remote 1.0.2](https://github.com/arman0824/LG-WebOs-TVRemote-Control/releases/latest/download/LG-Remote-1.0.2.apk).
+2. Open the downloaded `.apk` file. It is the Android app installer. If Android asks, allow your browser or file manager to **install unknown apps**, then tap **Install**.
+3. Connect the phone and TV to the same Wi-Fi. **A phone hotspot works too** — see below.
+4. Open **LG Remote → Connect TV → Scan network** and select your TV.
+5. Approve the prompt on your TV. If the TV shows a six-digit code instead, enter it in **TV pairing code** and tap **Pair TV**.
 
-The server runs on your computer and broadcasts the remote over your local Wi-Fi so any phone on the same network can open it.
+Once the app says **Connected**, use it like your normal remote. Pairing is saved
+on your phone. Install future updates over the existing app to keep that pairing.
 
-### 1. Start the phone server
+Can't find the download? Open [Releases](https://github.com/arman0824/LG-WebOs-TVRemote-Control/releases),
+expand **Assets**, and choose the `.apk` file, not the source-code ZIP.
 
-**macOS / Linux:**
+### Using your phone's hotspot
+
+Turn on **Mobile hotspot** on your phone, then connect the TV to that hotspot
+from the TV's Wi-Fi settings. Open LG Remote on the hotspot phone and scan.
+You can also use a second Android phone connected to the same hotspot.
+
+If scanning finds nothing, find the TV's **IP address** in its network settings.
+Enter that address under **Manual IP**, then tap **Connect**. Some hotspots block
+connections between devices; use the hotspot phone or turn off device isolation
+if that setting is available.
+
+The APK needs a local connection to the TV. To control a TV from a different
+network over the internet, use [family sharing](#share-with-family-over-the-internet).
+
+## Use a laptop
+
+The server is a small program that runs on your laptop and passes button presses
+from the browser to the TV. These steps work on **Windows, macOS and Linux**.
+
+### 1. Get the project
+
+Install the **LTS version of [Node.js](https://nodejs.org/en/download)** first.
+Then [download this project as a ZIP](https://github.com/arman0824/LG-WebOs-TVRemote-Control/archive/refs/heads/main.zip)
+and extract it. You can also use **Code → Download ZIP** at the top of this repo.
+
+Connect the laptop and TV to the same Wi-Fi or local network. If using a phone
+hotspot, connect the laptop and TV to that hotspot.
+
+### 2. Start the server
+
+Open a terminal in the extracted project folder — the folder containing
+`package.json` — and run:
 
 ```sh
 npm run start:phone
 ```
 
-**Windows (Command Prompt or PowerShell):**
+No `npm install` step is needed.
 
-```sh
-npm run start:phone
-```
+Prefer double-clicking? After installing Node.js, open **`phone.bat` on Windows**
+or **`phone.command` on Mac** inside the project folder. On Mac, if it is blocked,
+right-click the file and choose **Open**.
 
-You'll see output like:
+### 3. Open the remote
+
+The terminal prints an address like this:
 
 ```text
-Phone mode enabled. Open http://192.168.1.25:4173 on your phone.
+Started Local LG TV Remote at http://192.168.1.25:4173
 ```
 
-> On macOS you can also **double-click** `phone.command` in Finder. On Windows, **double-click** `phone.bat` in Explorer.
+Open **the address your terminal prints** in your browser. To use a phone's
+browser, connect the phone to the same Wi-Fi or hotspot and open that address
+there too. No phone app is needed for this option.
 
-### 2. Open the remote on your phone
+On the laptop itself, you can also open [localhost:4173](http://localhost:4173).
 
-Type the printed URL (something like `http://192.168.1.25:4173`) into your phone's browser.
+### 4. Pair your TV
 
-Your phone, your computer, and your TV must all be on the **same Wi-Fi** network.
+Click **Connect TV → Scan network**, choose your TV, then approve the TV prompt
+or enter its six-digit pairing code. If scanning finds nothing, enter the TV's
+IP address under **Manual IP**.
 
-### 3. Connect to your TV
+Keep the laptop on, awake and connected while using the browser remote.
+If Windows asks about firewall access, allow Node.js on your **private network**.
+On Mac, allow **Local Network** access if asked.
 
-1. Tap the **menu icon** (top-right of the remote, three lines).
-2. Tap **Scan network** — your LG TV should appear in a few seconds.
-3. Tap your TV in the list.
-4. **Accept the prompt on your TV screen**, or for NetCast TVs **enter the displayed six-digit code** in the app and press **Pair TV**.
+### 5. Stop when you're done
 
-You're connected. The status pill at the top of the remote turns blue and reads **Connected**.
-
-### 4. Stop the server
-
-In the terminal, press **Control + C**. Or run:
+Run this from the project folder:
 
 ```sh
 npm run stop
 ```
 
-On macOS double-click `stop.command`. On Windows double-click `stop.bat`.
+You can also double-click `stop.bat` on Windows or `stop.command` on Mac.
+The launch command starts a background server; closing the browser does not stop it.
 
----
+<details>
+<summary>Other useful commands</summary>
 
-## Phone Mode Details
-
-`npm run start:phone` runs the server on port `4173` and binds it to your local network (`0.0.0.0`). Anything on the same Wi-Fi can open it.
-
-**Checklist:**
-- ✅ Phone, computer, and TV on the **same** Wi-Fi
-- ✅ On **Windows**: allow the Node.js process through **Windows Defender Firewall** when prompted (private networks)
-- ✅ On **macOS**: allow **Local Network** access when prompted
-- ✅ This does **not** put the app on the internet — only your local network can reach it
-
-**Quick-launch files:**
-
-| File | Platform | Action |
-|---|---|---|
-| `phone.command` | macOS | Double-click to start phone mode |
-| `phone.bat` | Windows | Double-click to start phone mode |
-| `stop.command` | macOS | Double-click to stop the server |
-| `stop.bat` | Windows | Double-click to stop the server |
-
-> If macOS blocks a `.command` file the first time, right-click it → **Open** → approve.
-
-To change the port:
-
-**macOS / Linux:**
-```sh
-PORT=5000 npm run start:phone
-```
-
-**Windows (PowerShell):**
-```powershell
-$env:PORT=5000; npm run start:phone
-```
-
-**Windows (Command Prompt):**
-```cmd
-set PORT=5000 && npm run start:phone
-```
-
-To find the printed URL later:
-
-```sh
-npm run status
-```
-
----
-
-## Share With Family Anywhere
-
-1. Install ngrok on the host computer. On macOS:
-   ```sh
-   brew install --cask ngrok
-   ```
-2. Start the remote with `npm run start:phone` and connect your TV as usual.
-3. The owner signs in to a free [ngrok account](https://dashboard.ngrok.com/) once.
-   In **Share remote → Permanent link setup**, paste the HTTPS address from
-   [Domains](https://dashboard.ngrok.com/domains) and your
-   [authtoken](https://dashboard.ngrok.com/get-started/your-authtoken).
-   Click **Save & start fixed link**.
-4. Click **Copy link** and send it to your family. It opens the remote with no login,
-   app installation, or additional TV pairing.
-
-The host computer must stay on the TV's local network and have internet access.
-Keep the MacBook lid open. While sharing, the app prevents idle sleep; stopping
-sharing releases that sleep prevention. Closing the lid or shutting down can
-still interrupt sharing. The family phones only need internet access.
-
-**Stop sharing** closes the link without disconnecting the TV. Stopping the
-server also stops sharing. Click **Start sharing** to make the same saved address
-available again, including after restarting the server. The assigned address
-and authtoken stay in the local, ignored `.sharing-config.json` file; the authtoken
-is never sent to family browsers. A failed ngrok connection reports an error
-instead of replacing your saved address with a random URL.
-
-Ngrok's free plan may show a **Visit Site** notice before the remote opens. It
-also has monthly traffic limits (currently 20,000 HTTP requests and 1 GB of outgoing
-data). The remote reduces status polling on family phones and pauses polling
-in hidden tabs. See [ngrok's free-plan limits](https://ngrok.com/docs/pricing-limits/free-plan-limits).
-
-Anyone with the link can use the remote. Visitors use the host's existing TV
-session; setup, pairing, network scanning, and sharing management remain on the
-local page. Pairing keys stay on the host computer. If the TV is offline, the
-visitor sees a message to ask the person at the host computer to reconnect it.
-
----
-
-## Connect to Your TV
-
-You can connect in two ways.
-
-### Option A — Auto Scan (recommended)
-
-1. Turn on your LG TV.
-2. Open the remote page.
-3. Tap **menu** (top-right) → **Scan network**.
-4. Tap your TV when it appears.
-5. Accept the pairing prompt on the TV screen.
-
-### Option B — Manual IP
-
-1. Find your TV's IP address:
-   - On the TV: **Settings → Network → Wi-Fi Connection → Advanced Wi-Fi Settings** — the IP is listed there.
-   - Or in your **router's device list**.
-2. Open the remote page.
-3. Tap **menu** → type the IP into the **Manual IP** field → **Connect**.
-4. Accept the pairing prompt on the TV screen.
-
-### After pairing
-
-The pairing key is stored locally in `.tv-keys.json`. Next time you tap your TV, it connects immediately — no re-prompt.
-
-To forget a saved TV, tap **menu → Settings → Forget saved TV key**.
-
----
-
-## Using the Remote
-
-1. Click **Connect TV**, scan or enter the TV IP, and pair.
-2. Use number keys directly, as on the physical remote. Press **OK** to confirm
-   entries on the TV when needed.
-3. Use **Home** for the TV launcher and **Apps** for installed apps. On NetCast,
-   Apps opens the TV's own app screen.
-4. Open **More controls** for teletext, accessibility, aspect ratio, and recording.
-5. Use **Appearance** in the page footer to switch the light/dark page theme.
-
-The small LED on the remote flashes when a command succeeds. Connection errors
-appear on the page. Keyboard controls are suspended while editing the IP or
-pairing code, and Escape closes open panels.
-
----
-
-## How It Works
-
-A browser alone cannot scan your LAN or talk to an LG TV. This project runs a small **Node.js server** on your computer that bridges the two.
-
-```text
-Browser or phone  →  local Node server  →  LG webOS TV
-```
-
-The server:
-- Serves the website from `public/`
-- Scans your network with **SSDP**
-- Detects NetCast through **ROAP HTTP** (port `8080`) and pairs using the TV's numeric code
-- Connects to LG webOS over **WebSocket** (ports `3001` / `3000`)
-- Sends LG **`ssap://`** remote-control commands
-
-The browser sends button presses as JSON to the server (`POST /api/command`), and the server forwards them to the TV.
-
----
-
-## Troubleshooting
-
-### Phone can't open the URL
-
-- Use `npm run start:phone`, not `npm start`
-- Phone and computer on the **same** Wi-Fi
-- Disable **VPN**, **iCloud Private Relay**, or guest Wi-Fi isolation
-- Allow macOS **Local Network** and firewall prompts
-- Test the printed URL on the computer first
-
-### Scan doesn't find the TV
-
-- Make sure the TV is **on**
-- Make sure the TV and computer are on the **same network**
-- Try the **Manual IP** option instead
-- Some routers block multicast/SSDP — check router settings or use Manual IP
-
-### Older LG TVs (NetCast, including 32LB582B)
-
-These TVs use a numeric code instead of a webOS approval popup. The app detects
-their ROAP service on port 8080 automatically. Select the TV, enter the six-digit
-code displayed on its screen, and press **Pair TV**. The code is saved locally for
-reconnection. The Apps button opens the TV's own Apps screen on these models;
-listing webOS apps in the browser is not supported.
-
-Protocol reference: [pylgnetcast](https://github.com/wokar/pylgnetcast).
-
-### Pairing prompt never appears
-
-- Look at the TV screen — most LG models show an on-screen approval
-- If you have an older NetCast model, enter its numeric code in the app
-- Try **Settings → General → Devices → TV Manager** on the TV and remove old paired devices
-- Use **Settings → Forget saved TV key** for the selected or manually entered TV IP, then connect again
-
-The webOS registration uses a generic permissions manifest and waits for the TV's
-final `registered` response before reporting success. See the
-[LGTV Companion compatibility notes](https://github.com/JPersson77/LGTVCompanion/issues/351).
-
-### Buttons don't respond
-
-- Check the **status pill** — it must say **Connected**
-- Re-pair if the TV was restarted or changed networks
-- Some LG apps block certain remote commands while in use
-
-### Server won't start
-
-- Make sure **port 4173** is free, or set a different one:
-  ```sh
-  PORT=5000 npm start
-  ```
-
----
-
-## Local Files
-
-These files are created in the project folder when you run the app:
-
-| File | Purpose |
+| Command | What it does |
 |---|---|
-| `.tv-keys.json` | Saved LG pairing keys per TV IP |
-| `.sharing-config.json` | Fixed ngrok domain and private owner authtoken (owner-only file permissions) |
-| `.server.pid` | Background server process id |
-| `.server.log` | Background server logs |
+| `npm run status -- --host=0.0.0.0` | Checks the server and prints a local network address. |
+| `npm start` | Runs for laptop-only use at `http://localhost:4173`. Stop with **Ctrl+C**. |
+| `npm run start:phone -- --port=5000` | Uses port 5000 if the usual port is busy. |
+| `npm run stop -- --port=5000` | Stops the server using that custom port. |
 
-They are local-only and listed in `.gitignore` — do not commit them.
+</details>
 
----
+## Share with family over the internet
 
-## Security
+Optional: let family use the browser remote from another Wi-Fi network or mobile
+data. The laptop stays near the TV and handles the connection.
 
-The local setup page is designed for **trusted local networks**.
+<details>
+<summary>Set up a family link</summary>
 
-`npm run start:phone` binds the server to `0.0.0.0`, which means **any device on the same Wi-Fi** can open the remote page while the server is running.
+1. [Install ngrok](https://ngrok.com/download) on the laptop and create an ngrok account.
+2. Start the laptop server and connect your TV as described above.
+3. Open **Share remote → Permanent link setup**. Paste your ngrok [domain](https://dashboard.ngrok.com/domains) and [authtoken](https://dashboard.ngrok.com/get-started/your-authtoken).
+4. Click **Save & start fixed link**, then **Copy link** and send it to your family.
 
-When you're done, stop the server:
+Family members open the link in a browser. They do not need to install the app,
+create an account or pair the TV again. Keep the laptop awake, its lid open, and
+connected to both the TV's network and the internet.
 
-```sh
-npm run stop
+**Anyone with the link can control the TV.** Share it only with people you trust.
+Click **Stop sharing** to turn off the link. Ngrok may show a first-visit notice;
+its account limits still apply. Local app and browser control need no ngrok account.
+
+</details>
+
+## How it works
+
+Both versions use the same remote layout. The difference is which device talks
+to the TV:
+
+```text
+Android app ─────────────── Wi-Fi / hotspot ──────────────► LG TV
+
+Phone or laptop browser ──► Server on your laptop ────────► LG TV
+
+Family browser ── Internet / ngrok ──► Laptop server ─────► LG TV
 ```
 
-The optional **Share remote** link intentionally has no login. Anyone who has
-the link can control the connected TV until you stop sharing. It exposes the
-remote page, connection status, and TV commands, while the local setup endpoints
-and pairing-key file are not available through the link. Do not forward the
-local server's port directly through your router; use the family sharing feature.
+The Android app talks directly to the TV. A browser uses the laptop server to
+find the TV, handle pairing and send commands. Family sharing adds an internet
+link to that same laptop server.
+
+### Where the code lives
+
+| File or folder | Job |
+|---|---|
+| [`public/`](public/) | The remote's page, buttons and styling, shared by the browser and Android app. |
+| [`server.js`](server.js) | Serves the browser app, scans for TVs and controls webOS TVs. |
+| [`netcast.js`](netcast.js) | Handles older NetCast TVs and their six-digit pairing codes. |
+| [`sharing.js`](sharing.js) | Starts and stops the optional family link through ngrok. |
+| [`android/app/src/main/java/com/arman/lgremote/`](android/app/src/main/java/com/arman/lgremote/) | Android networking, TV discovery, pairing and commands. |
+| [`android/web/`](android/web/) | Connects the shared interface to the Android code. |
+| [`scripts/`](scripts/) | Starts/stops the server and builds the Android APK. |
+
+<details>
+<summary>A little more detail for developers</summary>
+
+- **Discovery:** SSDP finds TVs on the local network. Android scans local interfaces, including the phone's hotspot, and selects a route that matches the TV's address.
+- **webOS:** WebSocket connections on ports 3001/3000 carry pairing and remote commands.
+- **NetCast:** HTTP on port 8080 carries ROAP pairing and commands.
+- **Browser API:** Button presses go to `/api/command`; the server forwards them to the paired TV.
+- **Android:** A bundled WebView calls native Java through a bridge. Network work runs away from the UI thread.
+- **Saved pairing:** The laptop keeps keys in `.tv-keys.json`. Android stores them encrypted using Android Keystore. Ngrok settings stay in `.sharing-config.json` on the laptop. These private files are excluded from Git.
+
+Run the desktop tests with `npm test`. See the [Android guide](android/README.md)
+for APK builds and Android tests.
+
+</details>
+
+## If something doesn't work
+
+| Problem | Try this |
+|---|---|
+| **The TV doesn't appear** | Turn it on, check the Wi-Fi/hotspot connection, then try **Manual IP** using the address in the TV's network settings. |
+| **The phone can't open the browser remote** | Use `npm run start:phone`, open the laptop's printed address, and check that both devices use the same network. Check firewall access and VPN settings too. |
+| **`npm` isn't recognized** | Install Node.js, then close and reopen your terminal. |
+| **Pairing fails** | Approve the TV prompt, or enter the six-digit code on older TVs. If needed, use **Settings → Forget saved TV key** and pair again. |
+| **Buttons stop responding** | Check that the TV is on and reconnect. Its IP address may have changed after switching networks. |
+| **The family link stops working** | Check that the laptop is awake, online and still connected to the TV. Restart sharing if needed. |
+
+Hotspot routing has automated tests and emulator checks. Control of a physical
+TV through a phone hotspot still needs testing on real hardware.
+
+Use local browser access on a trusted network: other devices on that network can
+open the remote while the server is running.
 
 ---
 
-## License
-
-MIT
+MIT licensed. Independent project; not affiliated with LG Electronics.

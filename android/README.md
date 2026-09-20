@@ -6,7 +6,10 @@ ngrok account, internet hosting, or login is needed for local TV control.
 
 ## Install and connect
 
-1. Copy `outputs/LG-Remote-1.0.2.apk` from the project folder to your Android phone.
+1. On your phone, [download LG Remote 1.0.2](https://github.com/arman0824/LG-WebOs-TVRemote-Control/releases/latest/download/LG-Remote-1.0.2.apk).
+   You can also open [Releases](https://github.com/arman0824/LG-WebOs-TVRemote-Control/releases),
+   expand **Assets**, and choose the `.apk` file. If you built the app yourself,
+   copy `outputs/LG-Remote-1.0.2.apk` to your phone instead.
 2. Open it and allow that browser or file manager to install this APK when Android asks.
 3. Open **LG Remote**. Connect the TV to this phone’s hotspot, or connect both
    devices to the same Wi-Fi or another phone’s hotspot.
