@@ -73,6 +73,11 @@ Keep `android/keystore/` and `android/signing.properties` backed up together.
 They are private, ignored by Git, and needed to sign future app updates. The
 builder reuses an existing valid signing setup, including one from an older version.
 
+Builds recreate `work/`, `outputs/`, `android/app/src/main/assets/` and Android
+build folders as needed. You can delete these generated files and `android/.gradle/`
+when no build is running. Published APKs remain available on GitHub Releases.
+Keep `android/keystore/` and `android/signing.properties`; they are needed to sign updates.
+
 ## Tests
 
 ```sh

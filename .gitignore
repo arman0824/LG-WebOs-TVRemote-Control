@@ -1,6 +1,9 @@
+# Local machine files and dependencies
 .DS_Store
 node_modules/
 .env
+
+# Private settings and server runtime files
 .tv-keys.json
 .sharing-config.json
 .sharing-config.json.tmp
@@ -9,13 +12,15 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Android build products and private signing setup
 android/.gradle/
 android/**/build/
 android/local.properties
 android/signing.properties
 android/keystore/
 android/app/src/main/assets/
-outputs/*.apk
-outputs/*.idsig
-outputs/*.sha256
-work/android-tools/
+
+# Regenerable downloads, temporary tools and release build outputs
+/outputs/
+/work/
