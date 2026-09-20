@@ -5,9 +5,14 @@ const http = require("http");
 const net = require("net");
 const os = require("os");
 const path = require("path");
-const tls = require("tls");
+const { TinyWebSocket, encodeFrame, decodeFrame } = require("./tv-protocols/websocket");
 const { URL } = require("url");
-const { NetcastClient } = require("./netcast");
+const { NetcastClient, KEY_CODES } = require("./netcast");
+const { RokuClient } = require("./tv-protocols/roku");
+const { SamsungClient } = require("./tv-protocols/samsung");
+const { AndroidTvClient } = require("./tv-protocols/androidtv");
+const { detectSystem } = require("./tv-protocols/detect");
+const { isLocalHost, identifySystem } = require("./tv-protocols/catalog");
 const { RemoteSharing, createFamilyHandler } = require("./sharing");
 
 const PORT = Number(process.env.PORT || 4173);
@@ -20,6 +25,7 @@ let activeClient = null;
 let activeDevice = null;
 let activeInputSocket = null;
 let connecting = false;
+let pendingPairing = null;
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -85,7 +91,8 @@ function readJsonFile(file, fallback) {
 }
 
 function writeJsonFile(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), { mode: 0o600 });
+  fs.chmodSync(file, 0o600);
 }
 
 function sendJson(res, status, data) {
@@ -151,350 +158,58 @@ function parseSsdpPacket(message) {
   return headers;
 }
 
-async function describeDevice(headers, remoteAddress) {
-  const location = headers.location;
-  const server = headers.server || "";
-  const usn = headers.usn || "";
-  let host = remoteAddress;
-  let name = "LG webOS TV";
-  let manufacturer = "";
-  let model = "";
-  let isLikelyTv = /lg|webos|web0s|smartshare|mediarenderer/i.test(`${server} ${usn} ${headers.st || ""}`);
-
-  if (location) {
-    try {
-      const locationUrl = new URL(location);
-      host = locationUrl.hostname || host;
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 2200);
-      try {
-        const response = await fetch(location, { signal: controller.signal });
-        if (response.ok) {
-          const xml = await response.text();
-          name = extractTag(xml, "friendlyName") || name;
-          manufacturer = extractTag(xml, "manufacturer");
-          model = extractTag(xml, "modelName") || extractTag(xml, "modelNumber");
-          isLikelyTv = isLikelyTv || /lg|webos/i.test(`${name} ${manufacturer} ${model} ${xml}`);
-        }
-      } finally {
-        clearTimeout(timeout);
-      }
-    } catch {
-      // Some TVs respond to SSDP but block the description fetch. The IP is still useful.
+async function describeDevice(headers, host) {
+  let name = headers.name || "Network TV", manufacturer = "", model = "";
+  try {
+    const location = new URL(headers.location);
+    if (location.protocol !== "http:" || location.hostname !== host) throw new Error("Unrelated description URL.");
+    const response = await fetch(location, { redirect: "error", signal: AbortSignal.timeout(1500) });
+    if (response.ok) {
+      const xml = (await response.text()).slice(0, 65536);
+      name = extractTag(xml, "friendlyName") || name;
+      manufacturer = extractTag(xml, "manufacturer"); model = extractTag(xml, "modelName");
     }
-  }
-
-  return {
-    id: crypto.createHash("sha1").update(`${host}:${usn || location || server}`).digest("hex").slice(0, 12),
-    name,
-    host,
-    location: location || "",
-    manufacturer,
-    model,
-    server,
-    usn,
-    likelyLg: isLikelyTv
-  };
+  } catch { }
+  const marker = `${name} ${manufacturer} ${model} ${JSON.stringify(headers)}`;
+  const protocol = identifySystem(marker);
+  return { host, name, manufacturer, model, protocol, supported: protocol !== "auto" };
 }
 
 function localInterfaces() {
-  const interfaces = os.networkInterfaces();
-  return Object.values(interfaces)
-    .flat()
-    .filter((entry) => entry && entry.family === "IPv4" && !entry.internal)
-    .map((entry) => ({ address: entry.address, netmask: entry.netmask, name: entry.mac }));
+  return Object.values(os.networkInterfaces()).flat()
+    .filter(entry => entry && entry.family === "IPv4" && !entry.internal && isLocalHost(entry.address))
+    .map(entry => ({ address: entry.address, netmask: entry.netmask }));
 }
 
 async function scanSsdp(waitMs = 4200) {
-  const socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
-  const seen = new Map();
-  const descriptions = [];
-  const searchTargets = [
-    "urn:schemas-upnp-org:device:MediaRenderer:1",
-    "urn:schemas-upnp-org:service:AVTransport:1",
-    "ssdp:all"
-  ];
-
-  await new Promise((resolve, reject) => {
-    socket.once("error", reject);
-    socket.bind(0, () => {
-      socket.removeListener("error", reject);
-      resolve();
+  const mdns = require("./tv-protocols/mdns");
+  const found = new Map();
+  const sockets = [];
+  await Promise.all(localInterfaces().map(async entry => {
+    const socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
+    sockets.push(socket);
+    socket.on("error", () => {});
+    socket.on("message", (message, remote) => {
+      if (!isLocalHost(remote.address) || remote.address === entry.address || found.size >= 32) return;
+      const androidName = mdns.response(message);
+      const headers = androidName ? { name: androidName, server: "androidtvremote2" } : parseSsdpPacket(message);
+      const marker = JSON.stringify(headers);
+      if (!/roku|samsung|androidtv|webos|web0s|lg|netcast|roap|smartshare|mediarenderer/i.test(marker)) return;
+      if (!found.has(remote.address) || androidName) found.set(remote.address, headers);
     });
-  });
-
-  socket.on("message", async (message, remote) => {
-    const headers = parseSsdpPacket(message);
-    if (!headers.location && !headers.server && !headers.usn) return;
-    const fingerprint = `${remote.address}|${headers.location || ""}|${headers.usn || ""}`;
-    if (seen.has(fingerprint)) return;
-    seen.set(fingerprint, {
-      id: crypto.createHash("sha1").update(fingerprint).digest("hex").slice(0, 12),
-      name: "Discovered TV",
-      host: remote.address,
-      location: headers.location || "",
-      manufacturer: "",
-      model: "",
-      server: headers.server || "",
-      usn: headers.usn || "",
-      likelyLg: /lg|webos|smartshare|mediarenderer/i.test(`${headers.server || ""} ${headers.usn || ""} ${headers.st || ""}`)
-    });
-    const description = describeDevice(headers, remote.address).then((device) => {
-      const key = `${device.host}|${device.location || device.usn || fingerprint}`;
-      seen.delete(fingerprint);
-      seen.set(key, device);
-    });
-    descriptions.push(description);
-  });
-
-  for (const st of searchTargets) {
-    const packet = [
-      "M-SEARCH * HTTP/1.1",
-      "HOST: 239.255.255.250:1900",
-      "MAN: \"ssdp:discover\"",
-      "MX: 2",
-      `ST: ${st}`,
-      "",
-      ""
-    ].join("\r\n");
-    socket.send(Buffer.from(packet), 1900, "239.255.255.250");
-  }
-
-  await new Promise((resolve) => setTimeout(resolve, waitMs));
-  socket.close();
-  await Promise.allSettled(descriptions);
-
-  const byHost = new Map();
-  for (const device of seen.values()) {
-    const previous = byHost.get(device.host);
-    if (!previous || Number(device.likelyLg) > Number(previous.likelyLg) || device.name !== "Discovered TV") {
-      byHost.set(device.host, device);
-    }
-  }
-  return [...byHost.values()].sort((a, b) => Number(b.likelyLg) - Number(a.likelyLg) || a.name.localeCompare(b.name));
-}
-
-class TinyWebSocket {
-  constructor(url, options = {}) {
-    this.url = new URL(url);
-    this.options = options;
-    this.socket = null;
-    this.buffer = Buffer.alloc(0);
-    this.pending = new Map();
-    this.handlers = new Set();
-    this.closed = false;
-    this.handshakeBuffer = Buffer.alloc(0);
-  }
-
-  connect(timeoutMs = 7000) {
-    const isSecure = this.url.protocol === "wss:";
-    const port = Number(this.url.port || (isSecure ? 443 : 80));
-    const socketOptions = {
-      host: this.url.hostname,
-      port,
-      servername: this.url.hostname,
-      rejectUnauthorized: false
-    };
-
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(`Timed out connecting to ${this.url.hostname}:${port}.`));
-        this.close();
-      }, timeoutMs);
-
-      const onError = (error) => {
-        clearTimeout(timer);
-        reject(error);
-      };
-
-      const onReady = () => {
-        const key = crypto.randomBytes(16).toString("base64");
-        const requestPath = `${this.url.pathname || "/"}${this.url.search || ""}`;
-        const request = [
-          `GET ${requestPath} HTTP/1.1`,
-          `Host: ${this.url.host}`,
-          "Upgrade: websocket",
-          "Connection: Upgrade",
-          `Sec-WebSocket-Key: ${key}`,
-          "Sec-WebSocket-Version: 13",
-          "",
-          ""
-        ].join("\r\n");
-        socket.write(request);
-      };
-      const socket = isSecure ? tls.connect(socketOptions, onReady) : net.connect(socketOptions, onReady);
-      this.socket = socket;
-      socket.once("error", onError);
-
-      socket.on("data", (chunk) => {
-        if (!this.connected) {
-          this.handshakeBuffer = Buffer.concat([this.handshakeBuffer, chunk]);
-          const marker = this.handshakeBuffer.indexOf("\r\n\r\n");
-          if (marker === -1) return;
-          const header = this.handshakeBuffer.slice(0, marker).toString("utf8");
-          const rest = this.handshakeBuffer.slice(marker + 4);
-          if (!/^HTTP\/1\.1 101/i.test(header)) {
-            clearTimeout(timer);
-            reject(new Error(`WebSocket handshake failed: ${header.split("\r\n")[0] || "unknown response"}`));
-            this.close();
-            return;
-          }
-          this.connected = true;
-          socket.removeListener("error", onError);
-          socket.on("error", (error) => this.rejectAll(error));
-          socket.on("close", () => {
-            this.closed = true;
-            this.rejectAll(new Error("WebSocket closed."));
-          });
-          clearTimeout(timer);
-          if (rest.length) this.consume(rest);
-          resolve(this);
-          return;
-        }
-        this.consume(chunk);
-      });
-    });
-  }
-
-  onMessage(handler) {
-    this.handlers.add(handler);
-    return () => this.handlers.delete(handler);
-  }
-
-  sendText(text) {
-    if (!this.socket || this.closed) throw new Error("WebSocket is not connected.");
-    this.socket.write(encodeFrame(Buffer.from(text), 0x1));
-  }
-
-  request(payload, timeoutMs = 15000, accept = () => true) {
-    const id = payload.id || `req_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    const message = { ...payload, id };
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this.pending.delete(id);
-        reject(new Error(`Timed out waiting for ${message.uri || message.type || id}.`));
-      }, timeoutMs);
-      this.pending.set(id, { resolve, reject, timer, accept });
-      try { this.sendText(JSON.stringify(message)); }
-      catch (error) {
-        clearTimeout(timer);
-        this.pending.delete(id);
-        reject(error);
-      }
-    });
-  }
-
-  consume(chunk) {
-    this.buffer = Buffer.concat([this.buffer, chunk]);
-    while (true) {
-      const frame = decodeFrame(this.buffer);
-      if (!frame) return;
-      this.buffer = this.buffer.slice(frame.bytes);
-      if (frame.opcode === 0x8) {
-        this.close();
-        return;
-      }
-      if (frame.opcode === 0x9) {
-        this.socket.write(encodeFrame(frame.payload, 0xA));
-        continue;
-      }
-      if (frame.opcode !== 0x1) continue;
-      const text = frame.payload.toString("utf8");
-      for (const handler of this.handlers) handler(text);
-      try {
-        const message = JSON.parse(text);
-        if (message.id && this.pending.has(message.id)) {
-          const pending = this.pending.get(message.id);
-          if (message.type !== "error" && !pending.accept(message)) continue;
-          clearTimeout(pending.timer);
-          this.pending.delete(message.id);
-          if (message.type === "error") {
-            pending.reject(new Error(message.error || "LG TV returned an error."));
-          } else {
-            pending.resolve(message);
-          }
-        }
-      } catch {
-        // Pointer sockets may send plain text. Keep the connection alive.
-      }
-    }
-  }
-
-  rejectAll(error) {
-    for (const pending of this.pending.values()) {
-      clearTimeout(pending.timer);
-      pending.reject(error);
-    }
-    this.pending.clear();
-  }
-
-  close() {
-    this.closed = true;
-    this.rejectAll(new Error("WebSocket closed."));
     try {
-      if (this.socket && !this.socket.destroyed) this.socket.destroy();
-    } catch {
-      // Nothing else to do.
-    }
-  }
-}
-
-function encodeFrame(payload, opcode) {
-  const length = payload.length;
-  let headerLength = 2;
-  if (length >= 126 && length <= 65535) headerLength += 2;
-  if (length > 65535) headerLength += 8;
-  const mask = crypto.randomBytes(4);
-  const frame = Buffer.alloc(headerLength + 4 + length);
-  frame[0] = 0x80 | opcode;
-  if (length < 126) {
-    frame[1] = 0x80 | length;
-  } else if (length <= 65535) {
-    frame[1] = 0x80 | 126;
-    frame.writeUInt16BE(length, 2);
-  } else {
-    frame[1] = 0x80 | 127;
-    frame.writeBigUInt64BE(BigInt(length), 2);
-  }
-  mask.copy(frame, headerLength);
-  for (let index = 0; index < length; index += 1) {
-    frame[headerLength + 4 + index] = payload[index] ^ mask[index % 4];
-  }
-  return frame;
-}
-
-function decodeFrame(buffer) {
-  if (buffer.length < 2) return null;
-  const first = buffer[0];
-  const second = buffer[1];
-  let length = second & 0x7f;
-  let offset = 2;
-  if (length === 126) {
-    if (buffer.length < offset + 2) return null;
-    length = buffer.readUInt16BE(offset);
-    offset += 2;
-  } else if (length === 127) {
-    if (buffer.length < offset + 8) return null;
-    const bigLength = buffer.readBigUInt64BE(offset);
-    if (bigLength > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("Frame is too large.");
-    length = Number(bigLength);
-    offset += 8;
-  }
-  const masked = Boolean(second & 0x80);
-  let mask;
-  if (masked) {
-    if (buffer.length < offset + 4) return null;
-    mask = buffer.slice(offset, offset + 4);
-    offset += 4;
-  }
-  if (buffer.length < offset + length) return null;
-  const payload = Buffer.from(buffer.slice(offset, offset + length));
-  if (masked) {
-    for (let index = 0; index < payload.length; index += 1) {
-      payload[index] = payload[index] ^ mask[index % 4];
-    }
-  }
-  return { opcode: first & 0x0f, payload, bytes: offset + length };
+      await new Promise((resolve, reject) => { socket.once("error", reject); socket.bind(0, entry.address, resolve); });
+      socket.setMulticastInterface(entry.address); socket.setMulticastTTL(2);
+      for (const st of ["urn:schemas-upnp-org:device:MediaRenderer:1", "roku:ecp", "ssdp:all"]) {
+        socket.send(Buffer.from(`M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: "ssdp:discover"\r\nMX: 2\r\nST: ${st}\r\n\r\n`), 1900, "239.255.255.250");
+      }
+      socket.send(mdns.query(), 5353, "224.0.0.251");
+    } catch { }
+  }));
+  await new Promise(resolve => setTimeout(resolve, waitMs));
+  for (const socket of sockets) try { socket.close(); } catch { }
+  const devices = await Promise.all([...found.entries()].map(([host, headers]) => describeDevice(headers, host)));
+  return devices.sort((a, b) => Number(b.supported) - Number(a.supported) || a.name.localeCompare(b.name));
 }
 
 class WebOsClient {
@@ -605,50 +320,57 @@ async function sendButton(name) {
 
 async function connectToDevice(device, pairingCode = "") {
   const host = normalizeHost(device.host);
-  if (!host) throw new Error("Missing TV IP address.");
+  if (!isLocalHost(host)) throw new Error("Enter the TV's local IPv4 address from its network settings.");
   const keys = readJsonFile(KEY_FILE, {});
-  const saved = keys[host];
-  const key = typeof saved === "string" ? saved : saved?.key || "";
-  const legacy = new NetcastClient({ ...device, host }, saved?.protocol === "netcast" ? key : "");
-  const isNetcast = await legacy.detect();
-  const client = isNetcast ? legacy : new WebOsClient({ ...device, host }, typeof saved === "string" || saved?.protocol === "webos" ? key : "");
+  const old = keys[host];
+  const saved = typeof old === "string" ? { protocol: "webos", key: old } : old || {};
+  const protocol = await detectSystem({ ...device, host }, saved);
+  const selected = { name: device.name || "Smart TV", host, protocol, model: device.model || "", manufacturer: device.manufacturer || "" };
+  if (pendingPairing && (!pairingCode || pendingPairing.host !== host || protocol !== "androidtv")) {
+    pendingPairing.close(); pendingPairing = null;
+  }
+  let client;
   try {
-    if (isNetcast) {
+    if (protocol === "androidtv") {
+      client = pendingPairing?.host === host ? pendingPairing : new AndroidTvClient(selected, saved.protocol === protocol ? saved : {});
+      if (pairingCode) {
+        if (client !== pendingPairing) throw new Error("Tap Connect first to request a new TV pairing code.");
+        await client.finishPairing(pairingCode); pendingPairing = null;
+      } else if (saved.protocol === protocol && saved.credentials && saved.pin) await client.connect();
+      else {
+        pendingPairing = client;
+        await client.startPairing();
+        return { ok: true, pairingRequired: true, codeFormat: "hex", device: selected };
+      }
+    } else if (protocol === "netcast") {
+      client = new NetcastClient(selected, saved.protocol === protocol ? saved.key : "");
       if (!pairingCode && client.clientKey) {
-        try { await client.register(); }
-        catch (error) { if (error.code !== 401) throw error; }
+        try { await client.register(); } catch (error) { if (error.code !== 401) throw error; }
       }
       if (pairingCode) await client.register(pairingCode);
       if (client.closed) {
         await client.showPairingCode();
-        return { ok: true, pairingRequired: true, protocol: "netcast", device: { ...device, host } };
+        return { ok: true, pairingRequired: true, codeFormat: "numeric", device: selected };
       }
     } else {
-      await client.connect();
-      await client.register();
+      if (pairingCode) throw new Error("This TV system does not use a typed pairing code. Tap Connect and follow the TV prompt.");
+      client = protocol === "roku" ? new RokuClient(selected)
+        : protocol === "samsung" ? new SamsungClient(selected, saved.protocol === protocol ? saved : {})
+        : new WebOsClient(selected, saved.protocol === protocol ? saved.key : "");
+      await client.connect(); await client.register();
     }
-    keys[host] = { protocol: client.protocol, key: client.clientKey };
+    selected.capabilities = client.capabilities ? client.capabilities()
+      : protocol === "netcast" ? [...Object.keys(KEY_CODES), "digit"] : [...Object.keys(COMMANDS), "digit"];
+    if (client.name) selected.name = client.name;
+    keys[host] = { protocol, key: client.clientKey || "", pin: client.pin || "", ...(client.credentials ? { credentials: client.credentials } : {}) };
     writeJsonFile(KEY_FILE, keys);
   } catch (error) {
-    client.close();
+    client?.close(); if (pendingPairing === client) pendingPairing = null;
     throw error;
   }
-  if (activeClient) activeClient.close();
-  if (activeInputSocket) activeInputSocket.close();
-  activeClient = client;
-  activeDevice = {
-    name: device.name || "LG webOS TV",
-    host,
-    protocol: client.protocol,
-    model: device.model || "",
-    manufacturer: device.manufacturer || "LG"
-  };
-  activeInputSocket = null;
-  return {
-    ok: true,
-    device: activeDevice,
-    paired: true
-  };
+  activeClient?.close(); activeInputSocket?.close();
+  activeClient = client; activeDevice = selected; activeInputSocket = null;
+  return { ok: true, device: activeDevice, paired: true };
 }
 
 async function handleApi(req, res, pathname, shared = false) {
@@ -666,10 +388,10 @@ async function handleApi(req, res, pathname, shared = false) {
       return sendJson(res, 200, await sharing.start());
     }
     if (req.method === "GET" && pathname === "/api/status") {
-      if (activeClient?.protocol === "netcast") await activeClient.checkStatus();
+      if (activeClient?.checkStatus) await activeClient.checkStatus();
       return sendJson(res, 200, {
         connected: Boolean(activeClient && !activeClient.closed),
-        device: shared && activeDevice ? { name: activeDevice.name, model: activeDevice.model, protocol: activeDevice.protocol } : activeDevice,
+        device: shared && activeDevice ? { name: activeDevice.name, model: activeDevice.model, protocol: activeDevice.protocol, capabilities: activeDevice.capabilities } : activeDevice,
         shared,
         ...(shared ? {} : { localInterfaces: localInterfaces() })
       });
@@ -684,10 +406,11 @@ async function handleApi(req, res, pathname, shared = false) {
       const body = await readBody(req);
       if (connecting) return sendJson(res, 409, { error: "A pairing attempt is already in progress." });
       const device = {
-        name: body.name || body.host || "LG webOS TV",
+        name: body.name || body.host || "Smart TV",
         host: normalizeHost(body.host),
         model: body.model || "",
-        manufacturer: body.manufacturer || "LG"
+        manufacturer: body.manufacturer || "",
+        protocol: body.protocol || "auto"
       };
       connecting = true;
       try {
@@ -702,6 +425,7 @@ async function handleApi(req, res, pathname, shared = false) {
       if (!host) throw new Error("Enter or select the TV IP to forget first.");
       if (connecting) throw new Error("Wait for the current pairing attempt to finish.");
       const keys = readJsonFile(KEY_FILE, {});
+      if (pendingPairing?.host === host) { pendingPairing.close(); pendingPairing = null; }
       delete keys[host];
       writeJsonFile(KEY_FILE, keys);
       if (activeDevice?.host === host) {
@@ -713,6 +437,7 @@ async function handleApi(req, res, pathname, shared = false) {
     }
 
     if (req.method === "POST" && pathname === "/api/disconnect") {
+      pendingPairing?.close(); pendingPairing = null;
       if (activeInputSocket) activeInputSocket.close();
       if (activeClient) activeClient.close();
       activeInputSocket = null;
@@ -722,9 +447,9 @@ async function handleApi(req, res, pathname, shared = false) {
     }
 
     if (req.method === "POST" && pathname === "/api/command") {
-      if (!activeClient || activeClient.closed) throw new Error(shared ? "The TV is offline. Ask the person using the MacBook to reconnect it." : "Connect to a TV first.");
+      if (!activeClient || activeClient.closed) throw new Error(shared ? "The TV is offline. Ask the person using the laptop to reconnect it." : "Connect to a TV first.");
       const body = await readBody(req);
-      if (activeClient.protocol === "netcast") return sendJson(res, 200, await activeClient.command(body.command, body.payload));
+      if (activeClient.protocol !== "webos") return sendJson(res, 200, await activeClient.command(body.command, body.payload));
       if (body.command === "digit") {
         const digit = String(body.payload?.digit);
         if (!/^[0-9]$/.test(digit)) throw new Error("Enter a single digit from 0 to 9.");
@@ -784,6 +509,7 @@ const server = http.createServer((req, res) => {
 if (require.main === module) {
   const shutdown = () => {
     sharing.stop();
+    pendingPairing?.close();
     activeInputSocket?.close();
     activeClient?.close();
     server.closeAllConnections();
@@ -792,9 +518,9 @@ if (require.main === module) {
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);
   server.listen(PORT, HOST, () => {
-  console.log(`Local LG TV Remote is running at http://${HOST}:${PORT}`);
-  console.log("Keep your LG TV powered on and on the same Wi-Fi/network as this Mac.");
+  console.log(`Universal TV Remote is running at http://${HOST}:${PORT}`);
+  console.log("Keep your TV powered on and on the same Wi-Fi/network as this laptop.");
 });
 }
 
-module.exports = { TinyWebSocket, WebOsClient, encodeFrame, decodeFrame, server, COMMANDS };
+module.exports = { TinyWebSocket, WebOsClient, encodeFrame, decodeFrame, server, COMMANDS, connectToDevice };

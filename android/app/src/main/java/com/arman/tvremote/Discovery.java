@@ -1,4 +1,4 @@
-package com.arman.lgremote;
+package com.arman.tvremote;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
@@ -25,10 +25,12 @@ final class Discovery {
             socket.setTimeToLive(2);
             socket.setSoTimeout(400);
             InetAddress multicast = InetAddress.getByName("239.255.255.250");
-            for (String target : new String[] { "urn:schemas-upnp-org:device:MediaRenderer:1", "ssdp:all" }) {
+            for (String target : new String[] { "urn:schemas-upnp-org:device:MediaRenderer:1", "roku:ecp", "ssdp:all" }) {
                 byte[] query = ("M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: 2\r\nST: " + target + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII);
                 socket.send(new DatagramPacket(query, query.length, multicast, 1900));
             }
+            byte[] dns = Mdns.query();
+            socket.send(new DatagramPacket(dns, dns.length, InetAddress.getByName("224.0.0.251"), 5353));
             long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(4);
             while (System.nanoTime() < end && !Thread.currentThread().isInterrupted()) {
                 byte[] bytes = new byte[8192];
@@ -36,24 +38,39 @@ final class Discovery {
                 try { socket.receive(packet); } catch (SocketTimeoutException ignored) { continue; }
                 String host = packet.getAddress().getHostAddress();
                 if (!TvController.isLocalHost(host) || host.equals(route.address.getHostAddress())) continue;
+                String androidName = Mdns.response(Arrays.copyOf(packet.getData(), packet.getLength()));
+                if (!androidName.isEmpty()) {
+                    Map<String, String> headers = new HashMap<>(); headers.put("name", androidName); headers.put("server", "androidtvremote2");
+                    found.put(host, new Candidate(headers, route)); continue;
+                }
                 Map<String, String> headers = new HashMap<>();
                 for (String line : new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).split("\\r?\\n")) {
                     int colon = line.indexOf(':');
                     if (colon > 0) headers.put(line.substring(0, colon).toLowerCase(Locale.ROOT), line.substring(colon + 1).trim());
                 }
                 String marker = headers.toString().toLowerCase(Locale.ROOT);
-                if (marker.contains("lg") || marker.contains("webos") || marker.contains("web0s") || marker.contains("mediarenderer")) found.putIfAbsent(host, new Candidate(headers, route));
+                if (marker.contains("roku") || marker.contains("samsung") || marker.contains("android") || marker.contains("netcast") || marker.contains("lg") || marker.contains("webos") || marker.contains("web0s") || marker.contains("mediarenderer")) found.putIfAbsent(host, new Candidate(headers, route));
                 if (found.size() >= 16) break;
             }
         }
         return found;
     }
 
+    static String system(String marker) {
+        String value = marker.toLowerCase(Locale.ROOT);
+        if (value.contains("roku")) return "roku";
+        if (value.contains("samsung")) return "samsung";
+        if (value.contains("androidtvremote") || value.contains("android tv") || value.contains("google tv")) return "androidtv";
+        if (value.contains("netcast") || value.contains("roap")) return "netcast";
+        if (value.contains("webos") || value.contains("web0s")) return "webos";
+        return "auto";
+    }
+
     static JSONArray scan(Context context) throws Exception {
         List<LocalNetwork.Route> routes = LocalNetwork.routes(context);
         if (routes.isEmpty()) throw new Exception("Connect the TV to your phone's hotspot, or connect both devices to the same Wi-Fi or hotspot. You can also enter the TV IP manually.");
         WifiManager manager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        WifiManager.MulticastLock lock = manager == null ? null : manager.createMulticastLock("lg-remote-discovery");
+        WifiManager.MulticastLock lock = manager == null ? null : manager.createMulticastLock("tv-remote-discovery");
         // A hotspot can work even when the Wi-Fi client service cannot take a lock.
         if (lock != null) try { lock.setReferenceCounted(false); lock.acquire(); } catch (RuntimeException ignored) { }
         Map<String, Candidate> found = new LinkedHashMap<>();
@@ -79,7 +96,7 @@ final class Discovery {
         JSONArray devices = new JSONArray();
         long detailsEnd = System.nanoTime() + TimeUnit.SECONDS.toNanos(6);
         for (Map.Entry<String, Candidate> item : found.entrySet()) {
-            String host = item.getKey(), name = "LG / Network TV", model = "", manufacturer = "";
+            String host = item.getKey(), name = item.getValue().headers.getOrDefault("name", "Network TV"), model = "", manufacturer = "";
             try {
                 if (System.nanoTime() >= detailsEnd) throw new SocketTimeoutException();
                 OkHttpClient http = new OkHttpClient.Builder().socketFactory(item.getValue().route.sockets())
@@ -93,8 +110,8 @@ final class Discovery {
                     manufacturer = NetcastClient.tag(xml, "manufacturer");
                 }
             } catch (Exception ignored) { }
-            boolean lg = (name + model + manufacturer + item.getValue().headers).toLowerCase(Locale.ROOT).matches("(?s).*(lg|webos|web0s|lge).*" );
-            devices.put(TvController.json("host", host, "name", name.isEmpty() ? "Network TV" : name, "model", model, "manufacturer", manufacturer, "likelyLg", lg));
+            String protocol = system(name + model + manufacturer + item.getValue().headers);
+            devices.put(TvController.json("host", host, "name", name.isEmpty() ? "Network TV" : name, "model", model, "manufacturer", manufacturer, "supported", !protocol.equals("auto"), "protocol", protocol));
         }
         return devices;
     }

@@ -12,7 +12,7 @@ const state = {
 };
 
 const el = {};
-const KEYS = { theme: "lg.theme", manualHost: "lg.manualHost" };
+const KEYS = { theme: "tv.theme", manualHost: "tv.manualHost" };
 
 function $(sel) { return document.querySelector(sel); }
 function $$(sel) { return Array.from(document.querySelectorAll(sel)); }
@@ -26,6 +26,7 @@ function bindRefs() {
   el.tvMeta = $("#tvMeta");
 
   el.scanButton = $("#scanButton");
+  el.tvSystem = $("#tvSystem");
   el.manualHost = $("#manualHost");
   el.manualConnect = $("#manualConnect");
   el.deviceList = $("#deviceList");
@@ -61,6 +62,8 @@ function setBusy(value) {
     if (button.classList.contains("drawer-tab")) return;
     button.disabled = value;
   });
+  el.tvSystem.disabled = value;
+  if (!value) renderCapabilities();
 }
 
 function toast(message) {
@@ -88,17 +91,31 @@ function escapeHtml(value) {
   })[char]);
 }
 
+function renderCapabilities() {
+  const available = state.connected && Array.isArray(state.device?.capabilities) ? new Set(state.device.capabilities) : null;
+  $$("[data-command], [data-digit], #heroButton").forEach(button => {
+    const name = button === el.heroButton ? (available?.has("getApps") ? "getApps" : "openApps") : button.hasAttribute("data-digit") ? "digit" : button.dataset.command;
+    const unsupported = !!available && !available.has(name);
+    button.disabled = state.busy || unsupported;
+    button.classList.toggle("unsupported", unsupported);
+    if (unsupported) button.title = "Not available for this TV system";
+    else button.title = button.getAttribute("aria-label") || "";
+  });
+  $("#controlsHint").textContent = available ? "Dimmed controls are not available for this TV system. Other buttons can vary by model." : "Connect a TV to see which controls it supports.";
+}
+
 function renderStatus() {
+  renderCapabilities();
   el.statusPill.classList.toggle("connected", state.connected);
   el.statusText.textContent = state.connected ? "Connected" : "Offline";
   if (state.connected && state.device) {
-    el.tvName.textContent = state.device.name || "LG webOS TV";
+    el.tvName.textContent = state.device.name || "webOS TV";
     const meta = [state.shared ? "Family remote · Ready to use" : state.device.host];
     if (state.device.model) meta.push(state.device.model);
     el.tvMeta.textContent = meta.join(" • ");
   } else {
     el.tvName.textContent = "No TV connected";
-    el.tvMeta.textContent = state.shared ? "Ask the person using the MacBook to reconnect the TV." : "Connect your LG TV to get started.";
+    el.tvMeta.textContent = state.shared ? "Ask the person using the laptop to reconnect the TV." : "Connect your TV to get started.";
   }
   $("#connectLabel").textContent = state.connected ? "Manage TV" : "Connect TV";
   el.serverInfo.textContent = state.device ? `Saved TV: ${state.device.name} (${state.device.host})` : "Select a TV or enter its IP in Connect to manage pairing.";
@@ -152,9 +169,9 @@ function renderDevices(devices) {
     card.type = "button";
     card.className = "device-card";
     card.innerHTML = `
-      <strong>${escapeHtml(device.name || "LG webOS TV")}</strong>
+      <strong>${escapeHtml(device.name || "webOS TV")}</strong>
       <span>${escapeHtml(device.host)}${device.model ? ` • ${escapeHtml(device.model)}` : ""}</span>
-      <span>${device.likelyLg ? "LG / Smart TV detected" : "Network TV candidate"}</span>
+      <span>${escapeHtml(device.protocol && device.protocol !== "auto" ? device.protocol === "androidtv" ? "Android / Google TV" : device.protocol : "TV system will be checked when connecting")}</span>
     `;
     card.addEventListener("click", () => connect(device));
     el.deviceList.appendChild(card);
@@ -217,8 +234,8 @@ function setDrawerTab(name) {
 
 /* APPS VIEW */
 function openAppsView() {
-  if (!state.connected) { toast(state.shared ? "The TV is offline. Ask the person using the MacBook to reconnect it." : "Connect to a TV first."); return; }
-  if (state.device?.protocol === "netcast") { command("openApps"); return; }
+  if (!state.connected) { toast(state.shared ? "The TV is offline. Ask the person using the laptop to reconnect it." : "Connect to a TV first."); return; }
+  if (state.device?.protocol !== "webos") { command("openApps"); return; }
   el.appsView.classList.add("is-open");
   el.appsView.setAttribute("aria-hidden", "false");
   el.appsView.inert = false;
@@ -292,6 +309,8 @@ async function connect(device) {
     toast("Enter a TV IP address first.");
     return;
   }
+  device = { ...device, protocol: device.protocol && device.protocol !== "auto" ? device.protocol : el.tvSystem.value };
+  el.tvSystem.value = device.protocol;
   setBusy(true);
   el.connectionError.hidden = true;
   if (!device.pairingCode) {
@@ -308,6 +327,10 @@ async function connect(device) {
     });
     if (result.pairingRequired) {
       state.pairingDevice = result.device;
+      el.tvSystem.value = result.device.protocol;
+      el.pairingCode.inputMode = result.codeFormat === "numeric" ? "numeric" : "text";
+      el.pairingCode.pattern = result.codeFormat === "numeric" ? "[0-9]{6}" : "[0-9A-Fa-f]{6}";
+      toast(result.codeFormat === "hex" ? "Enter the six letters/numbers shown on your TV." : "Enter the six-digit code shown on your TV.");
       setDrawerTab("connect");
       openDrawer();
       el.pairingCode.focus();
@@ -341,9 +364,12 @@ function command(name, payload) {
 
 async function performCommand(name, payload) {
   if (!state.connected) {
-    toast(state.shared ? "The TV is offline. Ask the person using the MacBook to reconnect it." : "Connect to your TV first.");
+    toast(state.shared ? "The TV is offline. Ask the person using the laptop to reconnect it." : "Connect to your TV first.");
     if (!state.shared) { setDrawerTab("connect"); openDrawer(); }
     return;
+  }
+  if (Array.isArray(state.device?.capabilities) && !state.device.capabilities.includes(name)) {
+    toast("This control is not available for this TV system."); return;
   }
   try {
     const result = await api("/api/command", {
@@ -438,7 +464,12 @@ function wireEvents() {
     const host = el.manualHost.value.trim();
     if (!host) { toast("Enter a TV IP address first."); return; }
     try { localStorage.setItem(KEYS.manualHost, host); } catch {}
-    connect({ host, name: "Manual LG TV", manufacturer: "LG" });
+    connect({ host, name: "Smart TV", protocol: el.tvSystem.value });
+  });
+  el.tvSystem.addEventListener("change", () => {
+    state.pairingDevice = null; el.pairingCode.value = "";
+    el.pairingCode.inputMode = el.tvSystem.value === "netcast" ? "numeric" : "text";
+    el.pairingCode.pattern = el.tvSystem.value === "netcast" ? "[0-9]{6}" : "[0-9A-Fa-f]{6}";
   });
   el.manualHost.addEventListener("keydown", (e) => { if (e.key === "Enter") el.manualConnect.click(); });
   el.pairingForm.addEventListener("submit", (event) => {
@@ -450,7 +481,7 @@ function wireEvents() {
       el.manualHost.focus();
       return;
     }
-    const device = state.pairingDevice?.host === host ? state.pairingDevice : { host, name: "LG TV", manufacturer: "LG" };
+    const device = state.pairingDevice?.host === host ? state.pairingDevice : { host, name: "Smart TV", protocol: el.tvSystem.value };
     connect({ ...device, pairingCode: el.pairingCode.value.trim() });
   });
 
@@ -484,7 +515,7 @@ function wireEvents() {
   document.addEventListener("keydown", event => {
     const openPanel = state.drawerOpen ? el.drawer : el.appsView.classList.contains("is-open") ? el.appsView : null;
     if (event.key === "Tab" && openPanel) {
-      const focusable = [...openPanel.querySelectorAll("button:not(:disabled), input:not(:disabled), a[href], summary")]
+      const focusable = [...openPanel.querySelectorAll("button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], summary")]
         .filter(node => node.getClientRects().length);
       const first = focusable[0], last = focusable[focusable.length - 1];
       if (first && (!openPanel.contains(document.activeElement) || (event.shiftKey && document.activeElement === first))) {

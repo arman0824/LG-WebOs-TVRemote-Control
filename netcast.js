@@ -1,4 +1,4 @@
-// LG NetCast ROAP protocol (port 8080), used by older Smart TVs.
+// NetCast ROAP protocol (port 8080), used by older Smart TVs.
 const KEY_CODES = {
   powerOff: 1, buttonUp: 12, buttonDown: 13, buttonLeft: 14, buttonRight: 15,
   buttonEnter: 20, buttonHome: 21, buttonBack: 23, volumeUp: 24, volumeDown: 25,
@@ -36,7 +36,7 @@ class NetcastClient {
     const code = tag(xml, "ROAPError");
     if (probe) return /<ROAPError>/.test(xml);
     if (!response.ok || (code && code !== "200")) {
-      const error = new Error(`LG NetCast: ${tag(xml, "ROAPErrorDetail") || response.statusText} (${code || response.status}).`);
+      const error = new Error(`NetCast: ${tag(xml, "ROAPErrorDetail") || response.statusText} (${code || response.status}).`);
       error.code = Number(code || response.status);
       if (error.code === 401) this.close();
       throw error;
@@ -97,4 +97,4 @@ class NetcastClient {
   close() { this.closed = true; this.session = ""; }
 }
 
-module.exports = { NetcastClient, KEY_CODES };
+module.exports = { NetcastClient, KEY_CODES, tag };

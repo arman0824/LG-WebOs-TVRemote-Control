@@ -1,4 +1,4 @@
-package com.arman.lgremote;
+package com.arman.tvremote;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -14,7 +14,7 @@ import org.json.JSONObject;
 
 final class PairingStore {
     private final SharedPreferences prefs;
-    private static final String ALIAS = "lg.remote.pairing.v1";
+    private static final String ALIAS = "tv.remote.pairing.v1";
     PairingStore(Context context) { prefs = context.getSharedPreferences("tv_pairing", Context.MODE_PRIVATE); }
     private SecretKey secret() throws Exception {
         KeyStore store = KeyStore.getInstance("AndroidKeyStore");

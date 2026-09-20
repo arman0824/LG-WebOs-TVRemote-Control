@@ -1,4 +1,4 @@
-package com.arman.lgremote;
+package com.arman.tvremote;
 
 import java.net.*;
 import java.util.*;

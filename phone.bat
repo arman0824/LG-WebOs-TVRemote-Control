@@ -1,6 +1,6 @@
 @echo off
 cd /d "%~dp0"
-echo Starting Local LG TV Remote in phone mode...
+echo Starting Universal TV Remote in phone mode...
 echo.
 call npm run start:phone
 echo.

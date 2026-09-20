@@ -1,4 +1,4 @@
-package com.arman.lgremote;
+package com.arman.tvremote;
 
 import android.content.Context;
 import android.net.ConnectivityManager;

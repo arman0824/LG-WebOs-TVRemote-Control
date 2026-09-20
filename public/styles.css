@@ -1133,3 +1133,8 @@
   .stage { padding: 20px 16px 28px; gap: 20px; }
   .site-header { padding: 14px 16px; }
 }
+
+/* Multi-system setup and protocol-specific controls. */
+.field select { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
+.controls-hint { font-size: 10px; line-height: 1.5; text-align: center; color: #aab2a3; margin: 14px 0 0; }
+.remote button.unsupported { opacity: .28; cursor: not-allowed; }

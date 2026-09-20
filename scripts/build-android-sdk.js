@@ -37,11 +37,11 @@ for (const dir of ['classes', 'dex', 'generated']) {
 run(path.join(bt, 'aapt2'), ['compile', '--dir', 'android/app/src/main/res', '-o', path.join(build, 'resources.zip')]);
 const unsigned = path.join(build, 'unsigned.apk');
 const manifest = path.join(build, 'AndroidManifest.xml');
-fs.writeFileSync(manifest, fs.readFileSync(path.join(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8').replace('<manifest ', '<manifest package="com.arman.lgremote" '));
+fs.writeFileSync(manifest, fs.readFileSync(path.join(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8').replace('<manifest ', '<manifest package="com.arman.tvremote" '));
 run(path.join(bt, 'aapt2'), ['link', '-o', unsigned, '-I', androidJar, '--manifest', manifest,
-  '--min-sdk-version', '26', '--target-sdk-version', '36', '--version-code', '3', '--version-name', '1.0.2',
+  '--min-sdk-version', '26', '--target-sdk-version', '36', '--version-code', '4', '--version-name', '2.0.0',
   '--java', path.join(build, 'generated'), '-A', 'android/app/src/main/assets', path.join(build, 'resources.zip')]);
-const source = path.join(root, 'android/app/src/main/java/com/arman/lgremote');
+const source = path.join(root, 'android/app/src/main/java/com/arman/tvremote');
 const sources = fs.readdirSync(source).filter(name => name.endsWith('.java')).map(name => path.join(source, name));
 run('javac', ['--release', '17', '-encoding', 'UTF-8', '-classpath', [androidJar, ...deps].join(path.delimiter), '-d', path.join(build, 'classes'), ...sources]);
 const classesJar = path.join(build, 'classes.jar');
@@ -54,11 +54,11 @@ run(path.join(bt, 'zipalign'), ['-f', '-p', '4', unsigned, aligned]);
 const props = Object.fromEntries(fs.readFileSync(path.join(root, 'android/signing.properties'), 'utf8').trim().split('\n').map(line => {
   const index = line.indexOf('='); return [line.slice(0, index), line.slice(index + 1)];
 }));
-const output = path.join(root, 'outputs/LG-Remote-1.0.2.apk');
+const output = path.join(root, 'outputs/Universal-TV-Remote-2.0.0.apk');
 fs.mkdirSync(path.dirname(output), { recursive: true });
 run(path.join(bt, 'apksigner'), ['sign', '--ks', path.join(root, 'android', props.storeFile), '--ks-key-alias', props.keyAlias,
-  '--ks-pass', 'env:LG_APK_STORE_PASS', '--key-pass', 'env:LG_APK_KEY_PASS', '--out', output, aligned], {
-    env: { ...process.env, LG_APK_STORE_PASS: props.storePassword, LG_APK_KEY_PASS: props.keyPassword }
+  '--ks-pass', 'env:TV_APK_STORE_PASS', '--key-pass', 'env:TV_APK_KEY_PASS', '--out', output, aligned], {
+    env: { ...process.env, TV_APK_STORE_PASS: props.storePassword, TV_APK_KEY_PASS: props.keyPassword }
   });
 run(path.join(bt, 'apksigner'), ['verify', '--verbose', output]);
 const hash = crypto.createHash('sha256').update(fs.readFileSync(output)).digest('hex');

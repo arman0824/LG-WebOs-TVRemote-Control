@@ -8,7 +8,7 @@
       reject(new Error('The TV took too long to respond. Check its power and Wi-Fi or hotspot connection, then try again.'));
     }, path === '/api/connect' ? 110000 : 20000);
     pending.set(id, { resolve, reject, timer });
-    LGAndroid.request(id, path, options.body || '{}');
+    TVAndroid.request(id, path, options.body || '{}');
   });
   window.androidComplete = (id, result) => {
     const request = pending.get(id);

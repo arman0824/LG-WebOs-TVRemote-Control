@@ -1,4 +1,4 @@
-package com.arman.lgremote;
+package com.arman.tvremote;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -46,7 +46,7 @@ public final class MainActivity extends Activity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
         WebView.setWebContentsDebuggingEnabled((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0);
-        web.addJavascriptInterface(new Bridge(), "LGAndroid");
+        web.addJavascriptInterface(new Bridge(), "TVAndroid");
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 // The native bridge is only ever available to the bundled UI.
@@ -105,7 +105,7 @@ public final class MainActivity extends Activity {
         destroyed = true;
         worker.shutdownNow();
         controller.close();
-        web.removeJavascriptInterface("LGAndroid");
+        web.removeJavascriptInterface("TVAndroid");
         web.destroy();
         super.onDestroy();
     }

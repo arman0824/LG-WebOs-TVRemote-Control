@@ -1,4 +1,4 @@
-package com.arman.lgremote;
+package com.arman.tvremote;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -16,7 +16,7 @@ final class NetcastClient implements TvClient {
     static final MediaType XML = MediaType.get("application/atom+xml; charset=utf-8");
     static class TvError extends IOException {
         final int code;
-        TvError(int code, String detail) { super("LG TV: " + detail + " (" + code + ")."); this.code = code; }
+        TvError(int code, String detail) { super("TV: " + detail + " (" + code + ")."); this.code = code; }
     }
     NetcastClient(String host, JSONObject keys) { this("http://" + host + ":8080/roap/api/", keys, new OkHttpClient()); }
     NetcastClient(String base, JSONObject keys, OkHttpClient client) {

@@ -1,4 +1,4 @@
-package com.arman.lgremote;
+package com.arman.tvremote;
 
 import android.webkit.WebView;
 import android.view.ViewGroup;
@@ -29,7 +29,7 @@ public class AppSmokeTest {
     }
     @Test public void bundledRemoteAndNativeBridgeWorkWithoutDesktopServer() throws Exception {
         ready();
-        assertEquals("true", js("typeof LGAndroid.request === 'function'"));
+        assertEquals("true", js("typeof TVAndroid.request === 'function'"));
         assertEquals("true", js("document.querySelectorAll('[data-digit]').length === 10"));
         assertEquals("\"none\"", js("getComputedStyle(document.querySelector('#shareRemoteButton')).display"));
         assertEquals("true", js("document.documentElement.scrollWidth <= window.innerWidth"));

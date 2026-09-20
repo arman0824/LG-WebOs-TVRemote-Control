@@ -1,7 +1,7 @@
 {
-  "name": "local-lg-tv-remote",
-  "version": "1.0.0",
-  "description": "An LG webOS and NetCast remote with local pairing and optional family link sharing.",
+  "name": "universal-tv-remote",
+  "version": "2.0.0",
+  "description": "A local remote for Android / Google TV, Samsung, Roku, webOS and NetCast over Wi-Fi or a phone hotspot.",
   "main": "server.js",
   "scripts": {
     "test": "node --test",
@@ -16,11 +16,14 @@
     "android:build": "node scripts/prepare-android.js && node scripts/android-signing.js && cd android && ./gradlew assembleRelease"
   },
   "keywords": [
-    "lg",
-    "webos",
     "tv",
     "remote",
-    "local"
+    "android-tv",
+    "google-tv",
+    "samsung",
+    "roku",
+    "webos",
+    "hotspot"
   ],
   "author": "Arman Singh",
   "license": "MIT",

@@ -36,7 +36,7 @@ function createFamilyHandler({ handleApi, serveStatic, sendJson }) {
     if (req.method === "GET" && ["/", "/index.html", "/app.js", "/styles.css"].includes(pathname)) {
       return serveStatic(req, res, pathname);
     }
-    return sendJson(res, 404, { error: "This link controls the connected TV. Manage pairing on the MacBook." });
+    return sendJson(res, 404, { error: "This link controls the connected TV. Manage pairing on the laptop." });
   };
 }
 
@@ -104,7 +104,7 @@ class RemoteSharing {
     });
     if (this.current !== run) throw new Error("Sharing stopped.");
     // An isolated config avoids changing or inheriting the owner's other tunnels.
-    run.tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "lg-remote-tunnel-"));
+    run.tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "tv-remote-tunnel-"));
     const config = path.join(run.tempDir, "config.yml");
     const fixed = run.configuration;
     const target = `http://127.0.0.1:${run.server.address().port}`;
@@ -126,7 +126,7 @@ class RemoteSharing {
       let lines = "";
       let ngrokError = "";
       let registered = false;
-      const timer = setTimeout(() => reject(new Error("Could not create the family link. Check the MacBook's internet connection and try again.")), this.timeoutMs);
+      const timer = setTimeout(() => reject(new Error("Could not create the family link. Check the laptop's internet connection and try again.")), this.timeoutMs);
       run.cancel = () => { clearTimeout(timer); reject(new Error("Sharing stopped.")); };
       const finish = () => {
         if (!registered || !run.url) return;
@@ -158,14 +158,14 @@ class RemoteSharing {
       child.once("error", error => {
         clearTimeout(timer);
         reject(new Error(error.code === "ENOENT"
-          ? fixed ? "Install ngrok on the MacBook first: brew install --cask ngrok." : "Install cloudflared on the MacBook first: brew install cloudflared."
+          ? fixed ? "Install ngrok on the laptop first: https://ngrok.com/download" : "Install cloudflared on the laptop first: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
           : `Could not start sharing: ${error.message}`));
       });
       child.once("exit", () => {
         clearTimeout(timer);
         const connectionError = new Error(fixed
           ? `ngrok could not open the saved address${ngrokError ? ` (${ngrokError})` : ""}. Check the account authtoken, assigned domain, and internet connection.`
-          : "The sharing connection closed. Check the MacBook's internet connection and try again.");
+          : "The sharing connection closed. Check the laptop's internet connection and try again.");
         if (this.current === run) {
           this.current = null;
           this.lastError = run.ready ? fixed ? "Sharing stopped. Start sharing again to use the same saved link." : "Sharing stopped. Start sharing again to create a new link." : connectionError.message;

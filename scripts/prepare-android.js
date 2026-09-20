@@ -17,5 +17,6 @@ fs.copyFileSync(path.join(root, 'public/styles.css'), path.join(out, 'styles.css
 for (const name of ['android.js', 'android.css']) fs.copyFileSync(path.join(root, 'android/web', name), path.join(out, name));
 const { COMMANDS } = require('../server');
 const { KEY_CODES } = require('../netcast');
-fs.writeFileSync(path.join(out, 'commands.json'), JSON.stringify({ webos: COMMANDS, netcast: KEY_CODES }));
+const { SAMSUNG_KEYS, ROKU_KEYS, ROKU_TV_KEYS, ANDROID_KEYS } = require('../tv-protocols/catalog');
+fs.writeFileSync(path.join(out, 'commands.json'), JSON.stringify({ webos: COMMANDS, netcast: KEY_CODES, samsung: SAMSUNG_KEYS, roku: ROKU_KEYS, rokuTv: ROKU_TV_KEYS, androidtv: ANDROID_KEYS }));
 console.log('Prepared offline Android UI and TV command mappings.');

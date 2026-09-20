@@ -1,130 +1,124 @@
-# LG Remote for Android
+# Universal TV Remote for Android
 
-An Android 8.0+ app that bundles the existing remote interface and communicates
-directly with LG TVs through native Android networking. No desktop server,
-ngrok account, internet hosting, or login is needed for local TV control.
+An Android 8.0+ app that talks directly to supported TVs over Wi-Fi or a phone
+hotspot. No laptop, account or internet service is needed for local control.
 
-## Install and connect
+## Download and connect
 
-1. On your phone, [download LG Remote 1.0.2](https://github.com/arman0824/LG-WebOs-TVRemote-Control/releases/latest/download/LG-Remote-1.0.2.apk).
-   You can also open [Releases](https://github.com/arman0824/LG-WebOs-TVRemote-Control/releases),
-   expand **Assets**, and choose the `.apk` file. If you built the app yourself,
-   copy `outputs/LG-Remote-1.0.2.apk` to your phone instead.
-2. Open it and allow that browser or file manager to install this APK when Android asks.
-3. Open **LG Remote**. Connect the TV to this phone’s hotspot, or connect both
-   devices to the same Wi-Fi or another phone’s hotspot.
-4. Select **Connect TV → Scan network**, then select your TV. If discovery is
-   blocked by the router or hotspot, enter the TV's IPv4 address from its network settings.
-5. On NetCast TVs such as the LG 32LB582B, enter the six-digit code displayed on
-   the TV and tap **Pair TV**. On webOS, approve the TV's connection prompt.
+1. [Download Universal TV Remote 2.0.0](https://github.com/arman0824/Universal-TV-Remote/releases/latest/download/Universal-TV-Remote-2.0.0.apk) on your phone.
+2. Open the APK and tap **Install**. If Android asks, allow your browser or file manager to install this app.
+3. Connect the TV and phone to the same Wi-Fi, or connect the TV to your phone's hotspot.
+4. Open **Universal TV Remote → Connect TV → Scan network**. Select your TV.
+5. If scanning does not find it, enter the TV's IP from its network settings and choose its **TV system**.
+6. Follow the TV's pairing prompt or enter its displayed code.
 
-Pairing is stored on this phone, encrypted with an Android Keystore key, and
-excluded from Android backup. Each installed phone pairs with its TV once.
-NetCast reconnects to its saved TV when the app opens. For webOS, tap Connect
-again to reconnect using its saved key. If the TV's IP changes, scan and select
-its new address. A TV reset, revoked key, or app uninstall can require pairing again.
+You can also get the APK under **Assets** on the
+[Releases page](https://github.com/arman0824/Universal-TV-Remote/releases).
 
-The app supports the existing number pad, navigation, volume/channel controls,
-media controls and extended buttons. TV-specific functions depend on the model
-and active input. Power turns the TV off; network wake is not implemented.
-This APK is a local remote; internet family sharing remains in the desktop app.
+| TV system | Pairing |
+|---|---|
+| Android TV / Google TV | Tap Connect first, then enter the six-character code, including any letters A–F. Android TV Remote Service v2 must be available. |
+| Samsung | Choose Allow on the TV. The TV must support WebSocket remote control. |
+| Roku | Enable Control by mobile apps → Network access in the TV's advanced system settings. No code. |
+| webOS | Approve the TV prompt. |
+| NetCast | Enter the six-digit code. |
 
-## Using a phone hotspot
+The app disables buttons that its handler cannot send. Remaining buttons can
+still vary by TV model or active input. A streaming player does not necessarily
+control the display's volume or power. Fire TV, VIDAA, Apple TV and unsupported
+proprietary systems are not included.
 
-1. Enable **Mobile hotspot** in the Android phone's settings.
-2. On the TV, open its Wi-Fi settings and connect to that hotspot.
-3. On the hotspot phone, open **LG Remote → Connect TV → Scan network**.
-4. If the TV does not appear, find its **IP address** in the TV's network settings
-   (or the hotspot's connected-device list), enter it in **Manual IP**, and connect.
-5. Approve the TV prompt or enter its six-digit pairing code as usual.
+## Upgrading to version 2
 
-You can also use the app on a second phone connected to the same hotspot.
-Hotspots that isolate clients may block that second phone; use the hotspot phone
-or disable client isolation if the phone offers that setting. Local connectivity
-must be allowed by the phone: the APK cannot control a TV on an unrelated network
-through mobile data alone. Desktop browser users must connect the server computer
-to the TV's hotspot too, or use the existing family sharing link.
+Version 2 uses the new Android application ID `com.arman.tvremote`. It installs
+as a separate app from the previous version. Pair your TVs once in the new app;
+Android does not let it read the old app's private pairing store. You can remove
+the old app yourself after checking that the new one works.
 
-The app scans local interfaces, including hotspot interfaces, without requiring
-an active Wi-Fi client connection. TV connections use the matching local subnet,
-so a simultaneous upstream Wi-Fi connection is not preferred over the hotspot.
-Manual IP works even when the hotspot does not pass discovery multicast. No fixed
-hotspot IP range is assumed; check the TV's current IP after changing networks.
+Pairing stays encrypted on this phone and is excluded from Android backup.
+Future updates with this application ID and signing key keep that pairing.
+webOS and Samsung reconnect by tapping Connect; the other handlers can restore
+saved connections when the app opens. A changed TV IP or reset may require pairing again.
 
-## Build
+## Hotspot tips
+
+Enable Mobile hotspot on the phone and connect the TV to it. The app can run on
+that same phone or another phone connected to the hotspot. Use Manual IP if the
+hotspot blocks discovery. If it isolates clients, use the hotspot phone or disable
+isolation where available. It cannot reach an unrelated TV over mobile data alone.
+
+## Build the APK
 
 Requirements: Node.js, JDK 17, Android SDK platform 36 and build-tools 35.0.0.
-Set `JAVA_HOME` to JDK 17 and `ANDROID_HOME` to the SDK directory, or use Android
-Studio with those versions. Then, from the project root:
+Set `JAVA_HOME` and `ANDROID_HOME` for your installation, then run from the project
+folder:
 
 ```sh
 npm run android:build
 ```
 
-For a build using the Android SDK tools directly, without downloading Gradle:
+Output: `android/app/build/outputs/apk/release/app-release.apk`.
+
+The alternative SDK-only build also supports JDK 25:
 
 ```sh
 npm run android:apk
 ```
 
-This SDK-only path also supports JDK 25, compiles with `--release 17`, and puts the
-signed APK plus a SHA-256 checksum in `outputs/`. Both build paths use the same
-application source, UI assets and release signing key.
+Output: `outputs/Universal-TV-Remote-2.0.0.apk` and its SHA-256 checksum.
+Both builds use the same source, bundled interface and local release signing key.
+The APK contains no laptop pairing keys or ngrok credentials.
 
-After an SDK-only build, run `node scripts/android-smoke.js emulator-5554` to
-install the actual release APK on that emulator and check its bundled UI, native
-bridge, validation and encrypted pairing storage. Replace the serial with the
-intended device from `adb devices` when testing on a phone.
+Keep `android/keystore/` and `android/signing.properties` backed up together.
+They are private, ignored by Git, and needed to sign future app updates. The
+builder reuses an existing valid signing setup, including one from an older version.
 
-The build copies only the three public UI files, Android-specific UI adapters,
-and command maps into the APK. It never packages desktop pairing keys, ngrok
-credentials, or server configuration. Output:
-`android/app/build/outputs/apk/release/app-release.apk`.
-
-The first build creates a private release signing key in `android/keystore/`
-and its credentials in `android/signing.properties`. **Back up both together**
-to retain the ability to install future versions over this APK. These are ignored
-by Git and must never be included in the APK or shared with family members.
+## Tests
 
 ```sh
 cd android
 ./gradlew testDebugUnitTest lintRelease
-# With an emulator or USB-debugging phone connected:
 ./gradlew connectedDebugAndroidTest
 ```
 
-The WebView loads only bundled assets from a fixed local origin; external page
-loads are blocked. An asynchronous native bridge runs network work off the UI
-thread. Discovery uses SSDP on local Wi-Fi, Ethernet and hotspot interfaces; NetCast uses HTTP on port 8080 and webOS
-uses WebSockets on 3001/3000. The selected IP must be a private/local IPv4 address.
-For webOS self-signed TLS, the first successfully paired TV certificate is pinned;
-a certificate change requires forgetting and pairing the TV again.
+The SDK-only path can test the actual release APK on a deliberately selected
+emulator or device:
 
-This app targets Android API 36. Before upgrading the target to API 37+, implement
-the new `ACCESS_LOCAL_NETWORK` runtime permission flow and test it on that version.
+```sh
+node scripts/android-smoke.js emulator-5554
+```
 
-LG Remote is an independent project and is not affiliated with LG Electronics.
+For Android/Google TV pairing, Samsung and Roku checks against local simulators,
+start this in one terminal on the computer running your Android emulator:
 
-## Validation for version 1.0.0
+```sh
+node scripts/tv-mock-server.js
+```
 
-The release APK was built with the SDK-only build, signature-verified, installed
-and tested in an Android 11 ARM64 emulator. On-device checks passed for initial
-rendering, responsive width, native bridge errors, Wi-Fi discovery execution,
-encrypted pairing persistence and forgetting a key. Seven JVM protocol tests
-passed for NetCast pairing/session commands and webOS registration handling.
-The desktop project's twelve tests also passed. Physical-TV control from an
-Android phone has not yet been verified; test that after installing on your phone.
+Then run in another terminal:
 
-Version 1.0.1 (version code 2) centers the remote and connection card at every screen
-size and removes the promotional page copy. It uses the same release signing key
-as 1.0.0, so install it as an update to keep saved pairing.
+```sh
+node scripts/android-smoke.js emulator-5554 --protocol-mocks
+```
 
-Version 1.0.2 (version code 3) adds hotspot interface discovery and routes NetCast,
-webOS and input sockets through the selected TV's local network. It uses the same
-release signing key and can update 1.0.0 or 1.0.1 while keeping saved pairing.
-Validation: the signed 1.0.2 APK built and passed signature verification. All 12
-JVM tests (including hotspot route selection and source-bound HTTP) and 12 desktop
-tests passed. The release APK passed the Android 11 emulator smoke checks for the
-bundled UI, native bridge, local interface discovery, hotspot instructions and
-encrypted pairing storage. Physical phone/hotspot/TV operation still needs to be
-verified on real hardware.
+The simulator listens only on the computer's loopback interface. The Android
+emulator reaches it through `10.0.2.2`; this option is not for a physical phone.
+Stop the simulator with Ctrl+C. Physical TV and hotspot compatibility still
+needs testing on real devices.
+
+## Architecture
+
+The bundled WebView calls a native Java bridge. Network work runs off the UI
+thread. SSDP and mDNS scan local interfaces; each TV uses a socket route matching
+its subnet, including the phone's hotspot. Protocol handlers keep pairing and
+commands separate for each TV system. The UI receives a supported-controls list.
+
+Android TV uses an Android Keystore client certificate and verifies the displayed
+code against both certificates before saving the TV certificate fingerprint.
+Samsung and webOS save a TV certificate fingerprint after successful pairing.
+A changed certificate requires forgetting the old pairing. Tokens and saved
+pairing records are encrypted through Android Keystore.
+
+See [protocol notes](../docs/PROTOCOLS.md) for ports and reference sources.
+The app targets API 36. A future API 37+ target needs the applicable local-network
+permission flow before it is released.

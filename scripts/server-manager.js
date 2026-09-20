@@ -131,7 +131,7 @@ async function start() {
   if (!isWindows) child.unref();
   fs.writeFileSync(pidFile, String(child.pid));
   await waitForServer();
-  console.log(`Started Local LG TV Remote at ${displayUrl}`);
+  console.log(`Started Universal TV Remote at ${displayUrl}`);
 }
 
 function stop() {
@@ -147,7 +147,7 @@ function stop() {
     // Already gone.
   }
   removePid();
-  console.log("Stopped Local LG TV Remote.");
+  console.log("Stopped Universal TV Remote.");
 }
 
 function status() {

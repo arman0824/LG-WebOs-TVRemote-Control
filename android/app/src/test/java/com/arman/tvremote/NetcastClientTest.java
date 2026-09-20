@@ -1,4 +1,4 @@
-package com.arman.lgremote;
+package com.arman.tvremote;
 
 import org.junit.*;
 import static org.junit.Assert.*;

@@ -1,4 +1,4 @@
-package com.arman.lgremote;
+package com.arman.tvremote;
 
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -24,7 +24,7 @@ final class WebOsClient implements TvClient {
         this.host = host;
         this.key = key;
         this.commands = commands;
-        // LG TVs use local self-signed certificates. Trust only this selected LAN host,
+        // These TVs use local self-signed certificates. Trust only this selected LAN host,
         // and retain its fingerprint after successful TV-side pairing (TOFU).
         X509TrustManager trust = new X509TrustManager() {
             public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
